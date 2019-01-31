@@ -1,2 +1,2 @@
-# pTFCE_C-
+# pTFCE_C
 c++ implementation of the pTFCE method (https://spisakt.github.io/pTFCE/)
