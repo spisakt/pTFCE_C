@@ -11,10 +11,6 @@
 
 using namespace NEWIMAGE;
 
-template class pTFCE<float>;
-//template class pTFCE<double>;
-
-
 template <class T>
 void pTFCE<T>::destroy() {}
 
@@ -244,3 +240,9 @@ void pTFCE<T>::verbose()
 {
     _verbose = true;
 }
+
+template class pTFCE<float>;
+//template class pTFCE<double>;
+
+
+

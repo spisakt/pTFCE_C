@@ -11,11 +11,6 @@
 #define M_PI (4 * atan(1.0))
 #endif
 
-
-//g++ -o pTFCE-test smoothest_ext.o fwerp2z.o pTFCE-test.cc -D_GLIBCXX_USE_CXX11_ABI=0 -I$FSLDIR/extras/include/armawrap/armawrap/ -I$FSLDIR/extras/include/ -I$FSLDIR/include/
-// -L$FSLDIR/extras/lib/ -L$FSLDIR/lib/ -std=c++11 -lm -lutils -lwarpfns -lbasisfield -lnewimage -lmiscmaths -lprob -lNewNifti -lznz -lnewmat -lz -lblas -llapack -lgsl -lgslcblas
-
-
 int main(int argc, char* argv[])
 {
 
@@ -90,3 +85,8 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+//g++ -o pTFCE-test smoothest_ext.o fwerp2z.o pTFCE-test.cc -D_GLIBCXX_USE_CXX11_ABI=0 -I$FSLDIR/extras/include/armawrap/armawrap/ -I$FSLDIR/extras/include/ -I$FSLDIR/include/
+// -L$FSLDIR/extras/lib/ -L$FSLDIR/lib/ -std=c++11 -lm -lutils -lwarpfns -lbasisfield -lnewimage -lmiscmaths -lprob -lNewNifti -lznz -lnewmat -lz -lblas -llapack -lgsl -lgslcblas
+
+
