@@ -41,7 +41,7 @@ class pTFCE
 	ZestThr = 1.3;
 	resels = 0.0;
 	autosmooth = 1;
-	_verbose = true;
+	_verbose = false;
 	estimateSmoothness();
     }
 
@@ -54,7 +54,7 @@ class pTFCE
 	ZestThr = 1.3;
 	resels = 0.0;
 	autosmooth = 2;
-	_verbose = true;
+	_verbose = false;
 	estimateSmoothness();
     }
 
