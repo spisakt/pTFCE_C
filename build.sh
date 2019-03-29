@@ -1,5 +1,7 @@
 #!/bin/bash
 
+OPT="-O3"
+
 echo "g++ -o grfClust.o -c grfClust.cc -std=c++11 $LINK"
 g++ -o grfClust.o -c grfClust.cc -std=c++11 $LINK
 

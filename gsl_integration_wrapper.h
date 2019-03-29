@@ -75,7 +75,7 @@ template < typename F >
 double quad(F func,
             void * params,
             std::pair<double,double> const& range,
-            double epsabs = 1.49e-8, double epsrel = 1.49e-8,
+            double epsabs = 0.01, double epsrel = 0.01,
             int limit = 50)
 {
   return gsl_quad<F>(func, params, limit).integrate(range.first, range.second, epsabs, epsrel);

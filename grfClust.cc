@@ -9,8 +9,10 @@
 #define M_PI (4 * atan(1.0))
 #endif
 
-#define GSL_INTEGRATION_INTERVAL_LIMIT 1000
-#define GSL_INTEGRATION_UPPER 6.0
+#define GSL_INTEGRATION_INTERVAL_LIMIT 8
+#define GSL_INTEGRATION_UPPER 20 //std::numeric_limits<double>::infinity()
+#define GSL_EPS_ABS 0.1
+#define GSL_EPS_REL 0.1
 
 
 double dvox(double h)
@@ -21,13 +23,13 @@ double dvox(double h)
 
 double pvox(double h)
 {
-    return pnorm(h, 0.0, 1.0, false);
+    return pnormR(h, 0.0, 1.0, false, false);
 }
 
 
 double Es(double h, unsigned int V, double Rd)
 {
-    double ret = log(V) + pnorm(h, 0.0, 1.0, false, true);
+    double ret = log(V) + pnormR(h, 0.0, 1.0, false, true);
     double h2 = h*h;
 
     if (h >= 1.1)
@@ -62,7 +64,7 @@ double dclust( double h, void * p )
 
     double result;
 
-    result = quad( &dcl, p, {ZestThr, GSL_INTEGRATION_UPPER}, 1.49e-8, 0.0, GSL_INTEGRATION_INTERVAL_LIMIT);
+    result = quad( &dcl, p, {ZestThr, GSL_INTEGRATION_UPPER}, GSL_EPS_ABS, GSL_EPS_REL, GSL_INTEGRATION_INTERVAL_LIMIT);
 
     return dcl(h, params) / result;
 }
@@ -84,7 +86,7 @@ double dvox_clust(double h, void * p)
     if ( std::isnan(dclust(h, params)) )
         return dvox(h);
 
-    result = quad( &dvox_dclust, p, {ZestThr, GSL_INTEGRATION_UPPER}, 1.49e-8, 0.0, GSL_INTEGRATION_INTERVAL_LIMIT);
+    result = quad( &dvox_dclust, p, {ZestThr, GSL_INTEGRATION_UPPER}, GSL_EPS_ABS, GSL_EPS_REL, GSL_INTEGRATION_INTERVAL_LIMIT);
 
     return dvox_dclust(h, params) / result;
 }
@@ -102,7 +104,7 @@ double pvox_clust(double actH, void * p)
     if ( std::isnan(dvox_clust(actH, params)) )
         return exp(-745);
 
-    result = quad( &dvox_clust, p, {actH, GSL_INTEGRATION_UPPER}, 1.49e-8, 0.0, GSL_INTEGRATION_INTERVAL_LIMIT);
+    result = quad( &dvox_clust, p, {actH, GSL_INTEGRATION_UPPER}, GSL_EPS_ABS, GSL_EPS_REL, GSL_INTEGRATION_INTERVAL_LIMIT);
 
     return result;
 }
