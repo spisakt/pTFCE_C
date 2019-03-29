@@ -10,7 +10,7 @@
 #endif
 
 #define GSL_INTEGRATION_INTERVAL_LIMIT 8
-#define GSL_INTEGRATION_UPPER 20 //std::numeric_limits<double>::infinity()
+#define GSL_INTEGRATION_UPPER std::numeric_limits<double>::infinity()
 #define GSL_EPS_ABS 0.1
 #define GSL_EPS_REL 0.1
 
