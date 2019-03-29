@@ -61,18 +61,18 @@ void pTFCE<T>::estimateSmoothness()
 template <class T>
 double pTFCE<T>::aggregateLogp(NEWMAT::ColumnVector &pvals)
 {
-    double aggr;
+
+    double aggr=0;
     for (int i = 1; i <= pvals.n_rows; ++i)
     {
-	pvals(i) = -1 * log(pvals(i));
-	if (isinf(pvals(i))) pvals(i) = 745;
+	    pvals(i) = -1 * log(pvals(i));
+	    if (isinf(pvals(i))) pvals(i) = 745;
+	    aggr+=pvals(i);
     }
-    aggr = armawrap::Sum(pvals);
+    //aggr = armawrap::Sum(pvals);
     aggr = 0.5 * (sqrt(dh * (8.0 * aggr + dh)) - dh);
-    aggr = exp(-1 * aggr);
-    if (aggr == 0.0) aggr = std::numeric_limits<T>::min();
-    if (aggr == 1.0) aggr = 1 - std::numeric_limits<T>::epsilon();
-
+    // return the logp
+    //aggr = exp(-1 * aggr);
     return aggr;
 }
 
@@ -101,7 +101,7 @@ int pTFCE<T>::calculate()
     for (unsigned int i = 0; i < Nh; ++i)
     {
 	double p_thres = exp( -1 * ( logpmin + i * dh ) );
-	double thres = qnorm(p_thres, 0.0, 1.0, false, false);
+	double thres = qnormR(p_thres, 0.0, 1.0, false, false);
 	NEWMAT::ColumnVector clustersizes;
 	NEWMAT::ColumnVector clusterpvox;
 
@@ -125,7 +125,9 @@ int pTFCE<T>::calculate()
 	for (int i = 1; i <= clusterpvox.n_rows; ++i)
 	{
 	    struct dcl_params params = {V, Rd, clustersizes(i), ZestThr};
-	    clusterpvox(i) = pvox_clust(thres, &params); //applying GRF approach
+	    double pvc = pvox_clust(thres, &params);
+
+	    clusterpvox(i) = pvc; //applying GRF approach
 	    if (_verbose) std::cout << p_thres << " " << thres << " " << clustersizes(i) << " " << clusterpvox(i) << std::endl;
 	}
 	copyconvert(ccc, pvoxclust);
@@ -160,14 +162,17 @@ int pTFCE<T>::calculate()
 		    double aggr;
 		    allpvox = PVC.voxelts(x, y, z);
 		    aggr = aggregateLogp(allpvox);
-		    pTFCEimg.value(x,y,z) = aggr;
-		//}
-		//else
-		//{
-		//    pTFCEimg.value(x,y,z) = std::numeric_limits<T>::min();
-		//}
-		logp_pTFCE.value(x,y,z)  = -1 * log(pTFCEimg.value(x,y,z));
-		Z_pTFCE.value(x,y,z)  = qnorm(pTFCEimg.value(x,y,z), 0.0, 1.0, false, false);
+
+		    logp_pTFCE.value(x,y,z) = aggr;
+            //}
+            //else
+            //{
+            //    pTFCEimg.value(x,y,z) = std::numeric_limits<T>::min();
+            //}
+            double p = exp(-aggr);
+            pTFCEimg.value(x,y,z)  = p;
+            if (pTFCEimg.value(x,y,z) == 0) pTFCEimg.value(x,y,z)=std::numeric_limits<T>::min();
+            Z_pTFCE.value(x,y,z)  = qnormR(p, 0.0, 1.0, false, false);
 	    }
 
     if (autosmooth || resels > 0)

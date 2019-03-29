@@ -36,7 +36,7 @@ class pTFCE
 	Nh = 100;
 	dof = 0.0;
 	logpmin = 0.0;
-	logpmax = -1 * pnorm(img.max(mask), 0.0, 1.0, false, true);
+	logpmax = -1 * pnormR(img.max(mask), 0.0, 1.0, false, true);
 	dh = (logpmax - logpmin) / (Nh-1);
 	ZestThr = 1.3;
 	resels = 0.0;
@@ -49,7 +49,7 @@ class pTFCE
     {
 	Nh = 100;
 	logpmin = 0.0;
-	logpmax = -1 * pnorm(img.max(mask), 0.0, 1.0, false, true);
+	logpmax = -1 * pnormR(img.max(mask), 0.0, 1.0, false, true);
 	dh = (logpmax - logpmin) / (Nh-1);
 	ZestThr = 1.3;
 	resels = 0.0;
