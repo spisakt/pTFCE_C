@@ -77,16 +77,22 @@ int main(int argc, char* argv[])
     std::cout << std::endl << "TEST pTFCE" << std::endl;
     pTFCE<float> enhance(R, mask);
     enhance.printSmoothness();
+    enhance.saveRPV("testdata/RPV.nii.gz");
     enhance.setThresholdCount(12);
     enhance.calculate();
     save_volume(enhance.pTFCEimg, "testdata/pTFCE.nii.gz");
     save_volume(enhance.logp_pTFCE, "testdata/logpTFCE.nii.gz");
     save_volume(enhance.Z_pTFCE, "testdata/ZpTFCE.nii.gz");
 
+    enhance.setRFTAdjust(true);
+    enhance.calculate();
+    save_volume(enhance.pTFCEimg, "testdata/pTFCE_rpv.nii.gz");
+    save_volume(enhance.logp_pTFCE, "testdata/logpTFCE_rpv.nii.gz");
+    save_volume(enhance.Z_pTFCE, "testdata/ZpTFCE_rpv.nii.gz");
+
     return 0;
 }
 
 //g++ -o pTFCE-test smoothest_ext.o fwerp2z.o pTFCE-test.cc -D_GLIBCXX_USE_CXX11_ABI=0 -I$FSLDIR/extras/include/armawrap/armawrap/ -I$FSLDIR/extras/include/ -I$FSLDIR/include/
 // -L$FSLDIR/extras/lib/ -L$FSLDIR/lib/ -std=c++11 -lm -lutils -lwarpfns -lbasisfield -lnewimage -lmiscmaths -lprob -lNewNifti -lznz -lnewmat -lz -lblas -llapack -lgsl -lgslcblas
-
 

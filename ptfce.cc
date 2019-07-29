@@ -38,7 +38,7 @@ void pTFCE<T>::estimateSmoothness()
 	case 1:
 	{
 	    if (_verbose) std::cout << "Computing smoothness from Z-score image" << std::endl;
-	    smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	    smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
 	              img, mask,
 	              100.0, _verbose);
 	    Rd = dLh * V;
@@ -47,7 +47,7 @@ void pTFCE<T>::estimateSmoothness()
 	case 2:
 	{
 	    if (_verbose) std::cout << "Computing smoothness from 4D residual image" << std::endl;
-	    smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	    smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
 	              residual, mask,
 	              dof, _verbose);
 	    Rd = dLh * V;
@@ -104,6 +104,7 @@ int pTFCE<T>::calculate()
 	double thres = qnormR(p_thres, 0.0, 1.0, false, false);
 	NEWMAT::ColumnVector clustersizes;
 	NEWMAT::ColumnVector clusterpvox;
+        NEWMAT::ColumnVector clusterresels;
 
 	if (_verbose) std::cout << i << std::endl;
 	if (logpmin == 0.0 && i == 0)
@@ -112,6 +113,12 @@ int pTFCE<T>::calculate()
 	copyconvert(img, thr);
 	thr.binarise(thres);
 	ccc = connected_components(thr, clustersizes, 6);  //6, 18 or 26
+
+        if (adjustClusterSize)
+        {
+            volumeClust<T> RPC; copyconvert(ccc, RPC);
+            RPC.sumClusterValues(RPV, clusterresels);
+        }
 
 	if (_verbose)
 	{
@@ -124,8 +131,17 @@ int pTFCE<T>::calculate()
 	clusterpvox.ReSize(clustersizes.n_rows);
 	for (int i = 1; i <= clusterpvox.n_rows; ++i)
 	{
-	    struct dcl_params params = {V, Rd, clustersizes(i), ZestThr};
-	    double pvc = pvox_clust(thres, &params);
+	    double pvc;
+	    if (!adjustClusterSize)
+	    {
+		struct dcl_params params = {V, Rd, clustersizes(i), ZestThr};
+		pvc = pvox_clust(thres, &params);
+	    }
+	    else
+	    {
+		struct dcl_params params = {V, Rd, clusterresels(i), ZestThr};
+		pvc = pvox_clust(thres, &params);
+	    }
 
 	    clusterpvox(i) = pvc; //applying GRF approach
 	    if (_verbose) std::cout << p_thres << " " << thres << " " << clustersizes(i) << " " << clusterpvox(i) << std::endl;
@@ -162,7 +178,6 @@ int pTFCE<T>::calculate()
 		    double aggr;
 		    allpvox = PVC.voxelts(x, y, z);
 		    aggr = aggregateLogp(allpvox);
-
 		    logp_pTFCE.value(x,y,z) = aggr;
             //}
             //else
@@ -229,6 +244,29 @@ void pTFCE<T>::printSmoothness()
 }
 
 template <class T>
+void pTFCE<T>::saveRPV(const string& filename)
+{
+    //TODO - check if RPV image is valid
+    save_volume( smooth(this->RPV, this->img.xdim()*2), filename);
+    //save_volume( this->RPV, filename);
+}
+
+template <class T>
+void pTFCE<T>::saveFWHM(const string& filename)
+{
+    //TODO - check if RPV image is valid
+    save_volume( smooth(this->FWHMimg, this->img.xdim()*2), filename);
+    //save_volume( this->FWHMimg, filename);
+}
+
+template <class T>
+void pTFCE<T>::setRFTAdjust(bool a)
+{
+    std::cout << "RFT adjustment: " << a << std::endl;
+    adjustClusterSize = a;
+}
+
+template <class T>
 void pTFCE<T>::setZestThr(double Z)
 {
     ZestThr = Z;
@@ -248,6 +286,5 @@ void pTFCE<T>::verbose()
 
 template class pTFCE<float>;
 //template class pTFCE<double>;
-
 
 

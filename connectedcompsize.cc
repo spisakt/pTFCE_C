@@ -40,6 +40,14 @@ int main(int argc, char* argv[])
   copyconvert(outvol, outsizevol);
   outsizevol.projectClusterValues(clustersizes, 0.0f);
   save_volume(outsizevol, outsizename);
+
+  std::cout << "Clus\tVoxels" << std::endl;
+  for (int i = 1; i <= clustersizes.n_rows; ++i)
+  {
+    std::cout << i << "\t" << clustersizes(i) << std::endl;
+  }
+
+  return 0;
 }
 
 //g++ -o connectedcompsize connectedcompsize.cc -D_GLIBCXX_USE_CXX11_ABI=0 -I/site/fsl-6.0/include/ -I/site/fsl-6.0/extras/include/armawrap/armawrap/ -std=c++11

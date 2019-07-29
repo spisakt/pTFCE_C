@@ -23,6 +23,9 @@ class pTFCE
     unsigned long V;		//Number of voxels in mask
     double resels;		//
     double dLh;			//
+    volume<T> RPV;              //Resels per Voxel image
+    volume<T> FWHMimg;          //FWHM image
+    bool adjustClusterSize;     //RFT cluster-size adjustment based on RPV
     unsigned int autosmooth;	//Smoothness estimation mode (0-manual; 1-Z image; 2-residual image)
     double ZestThr;		//Cluster-forming Z threshold below which P(h|c) is estimated as P(h), due to limitations of GRF theory (default: 1.3)
     bool _verbose;		//Print progress bar and diagnostic messages
@@ -41,6 +44,7 @@ class pTFCE
 	ZestThr = 1.3;
 	resels = 0.0;
 	autosmooth = 1;
+        adjustClusterSize = false;
 	_verbose = false;
 	estimateSmoothness();
     }
@@ -54,6 +58,7 @@ class pTFCE
 	ZestThr = 1.3;
 	resels = 0.0;
 	autosmooth = 2;
+        adjustClusterSize = false;
 	_verbose = false;
 	estimateSmoothness();
     }
@@ -72,6 +77,9 @@ class pTFCE
     void setThresholdCount(int N);
     void setSmoothness(double Rd, unsigned long V, double resels);
     void printSmoothness();
+    void saveRPV(const string& filename);
+    void saveFWHM(const string& filename);
+    void setRFTAdjust(bool a);
     void setZestThr(double Z);
     void quiet();
     void verbose();
