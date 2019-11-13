@@ -7,6 +7,8 @@
 
 using namespace NEWIMAGE;
 
+enum RPVEstimationMode {NORPV = 0, FSLRPV, SPMRPV};
+
 template<class T>
 class pTFCE
 {
@@ -26,11 +28,11 @@ class pTFCE
     volume<T> RPV;              //Resels per Voxel image
     volume<T> FWHMimg;          //FWHM image
     bool adjustClusterSize;     //RFT cluster-size adjustment based on RPV
-    unsigned int autosmooth;	//Smoothness estimation mode (0-manual; 1-Z image; 2-residual image)
+    unsigned int autosmooth;	//Smoothness estimation mode (0-manual; 1-Z image; 2-residual image) TODO proper mode selection
+    int RPVMode;		//Local smoothness implementation mode (1-FSL*; 2-SPM)
     double ZestThr;		//Cluster-forming Z threshold below which P(h|c) is estimated as P(h), due to limitations of GRF theory (default: 1.3)
     bool _verbose;		//Print progress bar and diagnostic messages
 
-    void estimateSmoothness();
     double aggregateLogp(NEWMAT::ColumnVector &pvals);
 
   public:
@@ -42,11 +44,12 @@ class pTFCE
 	logpmax = -1 * pnormR(img.max(mask), 0.0, 1.0, false, true);
 	dh = (logpmax - logpmin) / (Nh-1);
 	ZestThr = 1.3;
+	Rd = 0.0;
 	resels = 0.0;
 	autosmooth = 1;
-        adjustClusterSize = false;
+	RPVMode = 1;
+	adjustClusterSize = false;
 	_verbose = false;
-	estimateSmoothness();
     }
 
     pTFCE(volume<T> img, volume<T> mask, volume4D<T> residual, double dof): img(img), mask(mask), residual(residual), dof(dof)
@@ -56,11 +59,12 @@ class pTFCE
 	logpmax = -1 * pnormR(img.max(mask), 0.0, 1.0, false, true);
 	dh = (logpmax - logpmin) / (Nh-1);
 	ZestThr = 1.3;
+	Rd = 0.0;
 	resels = 0.0;
 	autosmooth = 2;
-        adjustClusterSize = false;
+	RPVMode = 1;
+	adjustClusterSize = false;
 	_verbose = false;
-	estimateSmoothness();
     }
 
     ~pTFCE();
@@ -72,14 +76,19 @@ class pTFCE
     double number_of_resels;
     double fwer005_Z;
 
+    void estimateSmoothness();
     int calculate();
 
     void setThresholdCount(int N);
     void setSmoothness(double Rd, unsigned long V, double resels);
+    void setRPVEstimationMode(int mode);
+    int  getRPVEstimationMode();
     void printSmoothness();
+    void loadRPV(const string& filename);
     void saveRPV(const string& filename);
     void saveFWHM(const string& filename);
     void setRFTAdjust(bool a);
+    int  getRFTAdjust();
     void setZestThr(double Z);
     void quiet();
     void verbose();

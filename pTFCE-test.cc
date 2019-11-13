@@ -51,10 +51,12 @@ int main(int argc, char* argv[])
     NEWIMAGE::volume<float> mask;
     enum {X = 0, Y, Z};
 
-    read_volume(mask, "testdata/mask.nii.gz");
-    read_volume(R,    "testdata/zstat3.nii.gz");
+    read_volume(mask, "testdata/ResI_mask.nii.gz");
+    read_volume4D(R,    "testdata/ResI.nii.gz");
+    //read_volume(mask, "/home/aranyics/data/jordi_pTFCE/res4d_mask.nii");
+    //read_volume(R,    "/home/aranyics/data/jordi_pTFCE/vol0000.nii");
 
-    smoothest(dLh, mask_volume, resels, FWHM, FWHMmm, sigmasq,
+    /*smoothest(dLh, mask_volume, resels, FWHM, FWHMmm, sigmasq,
               R, mask,
               100.0, false);
 
@@ -63,7 +65,7 @@ int main(int argc, char* argv[])
     std::cout << "RESELS " << resels << std::endl;
     std::cout << "FWHMvoxel " << FWHM[X] << " " <<  FWHM[Y] << " " << FWHM[Z] << std::endl;
     std::cout << "FWHMmm " << FWHMmm[X] <<  " " << FWHMmm[Y] << " " << FWHMmm[Z] << std::endl;
-    std::cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << std::endl;
+    std::cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << std::endl;*/
 
 
     //TEST z2p p2z
@@ -77,18 +79,18 @@ int main(int argc, char* argv[])
     std::cout << std::endl << "TEST pTFCE" << std::endl;
     pTFCE<float> enhance(R, mask);
     enhance.printSmoothness();
-    enhance.saveRPV("testdata/RPV.nii.gz");
+    enhance.saveRPV("testdata/1030_RPV_spm.nii.gz");
     enhance.setThresholdCount(12);
     enhance.calculate();
-    save_volume(enhance.pTFCEimg, "testdata/pTFCE.nii.gz");
-    save_volume(enhance.logp_pTFCE, "testdata/logpTFCE.nii.gz");
-    save_volume(enhance.Z_pTFCE, "testdata/ZpTFCE.nii.gz");
+    save_volume(enhance.pTFCEimg, "testdata/1030_pTFCE.nii.gz");
+    save_volume(enhance.logp_pTFCE, "testdata/1030_logpTFCE.nii.gz");
+    save_volume(enhance.Z_pTFCE, "testdata/1030_ZpTFCE.nii.gz");
 
     enhance.setRFTAdjust(true);
     enhance.calculate();
-    save_volume(enhance.pTFCEimg, "testdata/pTFCE_rpv.nii.gz");
-    save_volume(enhance.logp_pTFCE, "testdata/logpTFCE_rpv.nii.gz");
-    save_volume(enhance.Z_pTFCE, "testdata/ZpTFCE_rpv.nii.gz");
+    save_volume(enhance.pTFCEimg, "testdata/1030_pTFCE_rpv.nii.gz");
+    save_volume(enhance.logp_pTFCE, "testdata/1030_logpTFCE_rpv.nii.gz");
+    save_volume(enhance.Z_pTFCE, "testdata/1030_ZpTFCE_rpv.nii.gz");
 
     return 0;
 }

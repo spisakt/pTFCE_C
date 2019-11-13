@@ -28,6 +28,11 @@ void pTFCE<T>::estimateSmoothness()
     double FWHMmm[3];
     double sigmasq[3];
 
+    if (_verbose) std::cout << "1. Smoothness estimation" << std::endl;
+    if (_verbose) std::cout << "********************************" << std::endl;
+
+    if (_verbose) std::cout << "RPV estimation mode = " << RPVMode << std::endl;
+
     switch (autosmooth)
     {
 	case 0:
@@ -38,18 +43,54 @@ void pTFCE<T>::estimateSmoothness()
 	case 1:
 	{
 	    if (_verbose) std::cout << "Computing smoothness from Z-score image" << std::endl;
-	    smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
-	              img, mask,
-	              100.0, _verbose);
+	    if (RPVMode == FSLRPV)
+	    {
+		smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
+	                  img, mask,
+	                  100.0, _verbose);
+	    }
+	    if (RPVMode == SPMRPV)
+	    {
+		smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	                  img, mask,
+	                  100.0, _verbose);
+		estimateRPV(RPV, FWHMimg,
+	                  img, mask,
+	                  100.0, _verbose);
+	    }
+	    if (RPVMode == NORPV)
+	    {
+		smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	                  img, mask,
+	                  100.0, _verbose);
+	    }
 	    Rd = dLh * V;
 	    break;
 	}
 	case 2:
 	{
 	    if (_verbose) std::cout << "Computing smoothness from 4D residual image" << std::endl;
-	    smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
-	              residual, mask,
-	              dof, _verbose);
+	    if (RPVMode == FSLRPV)
+	    {
+		smoothestVox(dLh, V, resels, FWHM, FWHMmm, sigmasq, RPV, FWHMimg,
+	                  residual, mask,
+	                  dof, _verbose);
+	    }
+	    if (RPVMode == SPMRPV)
+	    {
+		smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	                  residual, mask,
+	                  dof, _verbose);
+		estimateRPV(RPV, FWHMimg,
+	                  residual, mask,
+	                  dof, _verbose);
+	    }
+	    if (RPVMode == NORPV)
+	    {
+		smoothest(dLh, V, resels, FWHM, FWHMmm, sigmasq,
+	                  img, mask,
+	                  dof, _verbose);
+	    }
 	    Rd = dLh * V;
 	    break;
 	}
@@ -96,7 +137,16 @@ int pTFCE<T>::calculate()
 
     img = mask_volume(img, mask);
 
+    if (Rd == 0.0)
+    {
+	this->estimateSmoothness();
+    }
+
+    if (_verbose) std::cout << "2. Calculate pTFCE" << std::endl;
+    if (_verbose) std::cout << "********************************" << std::endl;
+
     if (_verbose) std::cout << "* Performing pTFCE..." << std::endl;
+    if (_verbose) std::cout << "../" << Nh << std::endl;
 
     for (unsigned int i = 0; i < Nh; ++i)
     {
@@ -106,7 +156,7 @@ int pTFCE<T>::calculate()
 	NEWMAT::ColumnVector clusterpvox;
         NEWMAT::ColumnVector clusterresels;
 
-	if (_verbose) std::cout << i << std::endl;
+	if (_verbose && (i%10) == 0) std::cout << i+1 << " " << std::endl;
 	if (logpmin == 0.0 && i == 0)
 	    thres = std::numeric_limits<T>::lowest();
 
@@ -117,7 +167,7 @@ int pTFCE<T>::calculate()
         if (adjustClusterSize)
         {
             volumeClust<T> RPC; copyconvert(ccc, RPC);
-            RPC.sumClusterValues(RPV, clusterresels);
+            RPC.sumClusterRPVValues(RPV, clusterresels);
         }
 
 	if (_verbose)
@@ -134,23 +184,28 @@ int pTFCE<T>::calculate()
 	    double pvc;
 	    if (!adjustClusterSize)
 	    {
-		struct dcl_params params = {V, Rd, clustersizes(i), ZestThr};
+		struct dcl_params params = {V, Rd, (double)clustersizes(i), ZestThr};
 		pvc = pvox_clust(thres, &params);
 	    }
 	    else
 	    {
-		struct dcl_params params = {V, Rd, clusterresels(i), ZestThr};
+		//clustersize given is resel must be converted to voxel units, hence the multiplications with "resels" (resel size)
+		//mean of the RPV image * "resels" does not exactle equal 1 TODO - check border voxels -- steve ??
+if (_verbose) cout << "*RESELS************************** " << resels << " threhold " << thres << " clustersizez(i) " << clustersizes(i) << " clusterresels(i) " << clusterresels(i) << " clusterresels(i) * resels " << clusterresels(i) * resels << endl;
+		struct dcl_params params = {V, Rd, clusterresels(i) * resels, ZestThr};
 		pvc = pvox_clust(thres, &params);
 	    }
 
 	    clusterpvox(i) = pvc; //applying GRF approach
-	    if (_verbose) std::cout << p_thres << " " << thres << " " << clustersizes(i) << " " << clusterpvox(i) << std::endl;
+	    if (false && _verbose) std::cout << p_thres << " " << thres << " " << clustersizes(i) << " " << clusterpvox(i) << std::endl;
 	}
 	copyconvert(ccc, pvoxclust);
 	pvoxclust.projectClusterValues(clusterpvox, 1.0f);
 
 	PVC.addvolume(pvoxclust);
     }
+
+    if (_verbose) std::cout << "...done" << std::endl;
 
     if (_verbose)
     {
@@ -187,6 +242,7 @@ int pTFCE<T>::calculate()
             double p = exp(-aggr);
             pTFCEimg.value(x,y,z)  = p;
             if (pTFCEimg.value(x,y,z) == 0) pTFCEimg.value(x,y,z)=std::numeric_limits<T>::min();
+            if (p == 1.0) p = 1.0-std::numeric_limits<T>::min();
             Z_pTFCE.value(x,y,z)  = qnormR(p, 0.0, 1.0, false, false);
 	    }
 
@@ -199,14 +255,14 @@ int pTFCE<T>::calculate()
     {
 	if (resels == 0.0)
 	{
-	    std::cout << "For GRF-based FWER correction, please specify resels, or use smoothness estimation based on the data, by not specifying Rd and V!" << std::endl;
+	    if (_verbose) std::cout << "For GRF-based FWER correction, please specify resels, or use smoothness estimation based on the data, by not specifying Rd and V!" << std::endl;
 	    number_of_resels = 0.0;
 	    fwer005_Z = 0.0;
 	}
     }
 
-    std::cout << "number_of_resels: " << number_of_resels << std::endl;
-    std::cout << "fwer_0.05_Z: " << fwer005_Z << std::endl;
+    if (_verbose) std::cout << "number_of_resels: " << number_of_resels << std::endl;
+    if (_verbose) std::cout << "fwer_0.05_Z: " << fwer005_Z << std::endl;
 
     return 0;
 }
@@ -238,32 +294,61 @@ void pTFCE<T>::setSmoothness(double Rd, unsigned long V, double resels)
 }
 
 template <class T>
+void pTFCE<T>::setRPVEstimationMode(int mode)
+{
+    this->RPVMode = mode;
+}
+
+template <class T>
+int pTFCE<T>::getRPVEstimationMode()
+{
+    return this->RPVMode;
+}
+
+template <class T>
 void pTFCE<T>::printSmoothness()
 {
-    std::cout << "smoothness: V(" << V << "), Rd(" << Rd << "), dLh(" << dLh << "), resels(" << resels << ")" << std::endl;
+    std::cout << "global smoothness: V(" << V << "), Rd(" << Rd << "), dLh(" << dLh << "), resels(" << resels << ")" << std::endl;
+}
+
+template <class T>
+void pTFCE<T>::loadRPV(const string& filename)
+{
+    if(_verbose) cerr << "Reading RPV image...." << endl;
+    read_volume(this->RPV, filename);
+    if(_verbose) print_volume_info(this->RPV,"RPV");
+
+    this->RPVMode = NORPV;
+    this->adjustClusterSize = true;
 }
 
 template <class T>
 void pTFCE<T>::saveRPV(const string& filename)
 {
     //TODO - check if RPV image is valid
-    save_volume( smooth(this->RPV, this->img.xdim()*2), filename);
-    //save_volume( this->RPV, filename);
+    //save_volume( mask_volume(smooth(this->RPV, this->img.xdim()), this->mask), filename );
+    save_volume( this->RPV, filename );
 }
 
 template <class T>
 void pTFCE<T>::saveFWHM(const string& filename)
 {
     //TODO - check if RPV image is valid
-    save_volume( smooth(this->FWHMimg, this->img.xdim()*2), filename);
-    //save_volume( this->FWHMimg, filename);
+    //save_volume( mask_volume(smooth(this->FWHMimg, this->img.xdim()), this->mask), filename );
+    save_volume( this->FWHMimg, filename );
 }
 
 template <class T>
 void pTFCE<T>::setRFTAdjust(bool a)
 {
-    std::cout << "RFT adjustment: " << a << std::endl;
+    std::cout << "RFT adjustment = " << a << std::endl;
     adjustClusterSize = a;
+}
+
+template <class T>
+int pTFCE<T>::getRFTAdjust( )
+{
+    return this->adjustClusterSize;
 }
 
 template <class T>

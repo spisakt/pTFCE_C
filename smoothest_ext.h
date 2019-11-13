@@ -89,6 +89,11 @@ int smoothestVox(double &dLh, unsigned long& mask_volume, double &resels, double
 	      NEWIMAGE::volume<float>& mask,
 	      double dof, bool verbose);
 
+int estimateRPV(NEWIMAGE::volume<float>& RPV, NEWIMAGE::volume<float>& FWHMimg,
+	      NEWIMAGE::volume4D<float>& R,
+	      NEWIMAGE::volume<float>& mask,
+	      double dof, bool verbose);
+
 int smoothest(double &dLh, unsigned long& mask_volume, double &resels, double *FWHM, double *FWHMmm, double *sigmasq,
 	      NEWIMAGE::volume4D<double>& R,
 	      NEWIMAGE::volume<double>& mask,

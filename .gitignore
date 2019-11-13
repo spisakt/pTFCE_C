@@ -1,0 +1,6 @@
+testdata/
+*.o
+connectedcompsize
+pTFCE-test
+ptfce
+smoothest

@@ -3,11 +3,11 @@
 #include <string>
 #include <map>
 
+#include "mathutil.h"
 #include "smoothest_ext.h"
 
 #define _GNU_SOURCE 1
 #define POSIX_SOURCE 1
-
 
 using namespace NEWIMAGE;
 
@@ -72,6 +72,10 @@ unsigned long standardise(volume<float>& mask,
   for (int z=mask.minz(); z<=mask.maxz(); z++) {
     for (int y=mask.miny(); y<=mask.maxy(); y++) {
       for (int x=mask.minx(); x<=mask.maxx(); x++) {
+
+    for ( unsigned short t = 0; t < M; t++ ) {   // aranyics
+	if( isnan2(R(x,y,z,t)) ) R(x,y,z,t) = 0.0;
+    }
 
     if( mask(x,y,z) > 0.5) {
       
@@ -277,27 +281,31 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 {
   if(verbose) cerr << "Standardising....";      //aranyics @ every case of verbose.value()
   mask_volume = standardise(mask, R);           //aranyics
+  if(verbose) print_volume_info(R, "standardized");
   if(verbose) cerr << "done" << endl;
 
   if(verbose) cerr << "Masked-in voxels = " << mask_volume << endl;
 
   unsigned long N = 0;
+  unsigned int D = 3;
 
   // MJ additions to make it cope with 2D images
   bool usez = true;
-  if (R.zsize() <= 1) { usez = false; }
+  if (R.zsize() <= 1) { usez = false; D = 2; }
   if ((!usez) && verbose) {
     cout << "Using 2D image mode." << endl;
   }
 
   // Creating volumes for RPV - aranyics
-  RPV.reinitialize(mask, false);
+  RPV.reinitialize(mask, false); //FSL < 6.0.2
+  //RPV.reinitialize(mask, TEMPLATE); // FSL <= 6.0.2
   RPV *= 0;
   copyconvert(RPV, FWHMimg);
   NEWIMAGE::volume<float> SS_X, SS_Y, SS_Z;
   NEWIMAGE::volume<float> S2X, S2Y, S2Z;
   NEWIMAGE::volume<float> SSQX, SSQY, SSQZ;
   NEWIMAGE::volume<float> FWHMX, FWHMY, FWHMZ;
+  NEWIMAGE::volume<float> RPVX, RPVY, RPVZ;
   copyconvert(RPV,SS_X);
   copyconvert(RPV,SS_Y);
   copyconvert(RPV,SS_Z);
@@ -310,8 +318,10 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   copyconvert(RPV,FWHMX);
   copyconvert(RPV,FWHMY);
   copyconvert(RPV,FWHMZ);
+  copyconvert(RPV,RPVX);
+  copyconvert(RPV,RPVY);
+  copyconvert(RPV,RPVZ);
 
-  //cout << "R " << R.xsize() << " " << R.ysize() << " " << R.zsize() << " " << endl;
 
   // Estimate the smoothness of the normalised residual field
   // see TR00DF1 for mathematical description of the algorithm.
@@ -344,25 +354,28 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 	  }
 	}
 
-	if( mask(x, y, z)>0.5 ) {
-	  // TODO - properly scale values with L ?? (Salimi et.al. Appendix A)
+	if( (mask(x, y, z)>0.5 ) &&
+	    (mask(x-1, y, z)>0.5) &&
+	    (mask(x, y-1, z)>0.5) &&
+	    ( (!usez) || (mask(x, y, z-1)>0.5) ) ) {
+	  // TODO RPV image is translated by 1 voxel
 	  for ( unsigned short t = 0; t < R.tsize(); t++ ) {
 	    // Sum per voxels for RPV - aranyics
 	    if (mask(x-1, y, z)>0.5) SS_X(x, y, z) += R(x, y, z, t) * R(x-1, y, z, t);
-	    if (mask(x+1, y, z)>0.5) SS_X(x, y, z) += R(x, y, z, t) * R(x+1, y, z, t);
+	    //if (mask(x+1, y, z)>0.5) SS_X(x, y, z) += R(x, y, z, t) * R(x+1, y, z, t);
 	    if (mask(x, y-1, z)>0.5) SS_Y(x, y, z) += R(x, y, z, t) * R(x, y-1, z, t);
-	    if (mask(x, y+1, z)>0.5) SS_Y(x, y, z) += R(x, y, z, t) * R(x, y+1, z, t);
+	    //if (mask(x, y+1, z)>0.5) SS_Y(x, y, z) += R(x, y, z, t) * R(x, y+1, z, t);
 	    if (usez) {
 	      if (mask(x, y, z-1)>0.5) SS_Z(x, y, z) += R(x, y, z, t) * R(x, y, z-1, t);
-	      if (mask(x, y, z+1)>0.5) SS_Z(x, y, z) += R(x, y, z, t) * R(x, y, z+1, t);
+	      //if (mask(x, y, z+1)>0.5) SS_Z(x, y, z) += R(x, y, z, t) * R(x, y, z+1, t);
 	    }
 	    if (mask(x-1, y, z)>0.5) S2X(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x-1, y, z, t)));
-	    if (mask(x+1, y, z)>0.5) S2X(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x+1, y, z, t)));
+	    //if (mask(x+1, y, z)>0.5) S2X(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x+1, y, z, t)));
 	    if (mask(x, y-1, z)>0.5) S2Y(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y-1, z, t)));
-	    if (mask(x, y+1, z)>0.5) S2Y(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y+1, z, t)));
+	    //if (mask(x, y+1, z)>0.5) S2Y(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y+1, z, t)));
 	    if (usez) {
 	      if (mask(x, y, z-1)>0.5) S2Z(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y, z-1, t)));
-	      if (mask(x, y, z+1)>0.5) S2Z(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y, z+1, t)));
+	      //if (mask(x, y, z+1)>0.5) S2Z(x, y, z) += 0.5 * (Sqr(R(x, y, z, t)) + Sqr(R(x, y, z+1, t)));
 	    }
 	  }
 	  // for extreme smoothness
@@ -372,7 +385,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 	}
       }
 
-  if (verbose) {
+  if (false && verbose) {
     save_volume(RPV, "testdata/RPV_test.nii.gz");
     save_volume(SS_X, "testdata/SS_X_test.nii.gz");
     save_volume(SS_Y, "testdata/SS_Y_test.nii.gz");
@@ -400,7 +413,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 //    S2[Y] *= norm;
 //    S2[Z] *= norm;
 
-  if(verbose) {
+  if(false && verbose) {
     cout << "SSminus[X] = " << SSminus[X] << ", SSminus[Y] = " << SSminus[Y] << ", SSminus[Z] = " << SSminus[Z]
          << ", S2[X] = " << S2[X] << ", S2[Y] = " << S2[Y] << ", S2[Z] = " << S2[Z]
          << endl;
@@ -473,6 +486,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   for ( unsigned short z = zstart; z < R.zsize() ; z++ )
     for ( unsigned short y = 1; y < R.ysize() ; y++ )
       for ( unsigned short x = 1; x < R.xsize() ; x++ )
+      {
 	if( (mask(x, y, z)>0.5) &&
 	    (mask(x-1, y, z)>0.5) &&
 	    (mask(x, y-1, z)>0.5) &&
@@ -482,7 +496,8 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 	    SSQY(x, y, z) = -1.0 / (4 * log(fabs(SS_Y(x, y, z) / S2Y(x, y, z))));
 	    if (usez) SSQZ(x, y, z) = -1.0 / (4 * log(fabs(SS_Z(x, y, z) / S2Z(x, y, z))));
 
-	    FWHMX(x, y, z) = sqrt(8 * log(2) * SSQX(x, y, z));
+	    //TODO fwhm
+	    /*FWHMX(x, y, z) = sqrt(8 * log(2) * SSQX(x, y, z));
 	    FWHMY(x, y, z) = sqrt(8 * log(2) * SSQY(x, y, z));
 	    if (usez) FWHMZ(x, y, z) = sqrt(8 * log(2) * SSQZ(x, y, z));
 
@@ -490,16 +505,27 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 	    if (usez) RPV(x, y, z) = RPV(x, y, z) * (FWHMZ(x, y, z)*R.zdim());
 	    //FWHMimg(x, y, z) = RPV(x, y, z);
 	    RPV(x, y, z) = (R.xdim()*R.ydim()*R.zdim()) / RPV(x, y, z);
-	    FWHMimg(x, y, z) = usez ? pow(RPV(x, y, z), -0.5) : pow(RPV(x, y, z), -0.33333333);
+	    FWHMimg(x, y, z) = usez ? pow(RPV(x, y, z), -0.5) : pow(RPV(x, y, z), -0.33333333);*/
+
+	    //TODO nan values at mask edges
+	    RPVX(x, y, z) = pow( 4 * log( fabs(S2X(x, y, z) / SS_X(x, y, z)) ) , 0.5 ) * pow(8 * log(2), -0.5);
+	    RPVY(x, y, z) = pow( 4 * log( fabs(S2Y(x, y, z) / SS_Y(x, y, z)) ) , 0.5 ) * pow(8 * log(2), -0.5);
+	    RPVZ(x, y, z) = pow( 4 * log( fabs(S2Z(x, y, z) / SS_Z(x, y, z)) ) , 0.5 ) * pow(8 * log(2), -0.5);
+
+	    RPV(x, y, z) = RPVX(x, y, z) * RPVY(x, y, z) * RPVZ(x, y, z);
 	}
+	    //if ( isnan2(RPV(x, y, z)) ) RPV(x, y, z) = 0.0;
+
+	    FWHMimg(x, y, z) = pow(RPV(x, y, z), -(0.5));
+      }
 
   if (verbose) {
-    save_volume(SSQX, "testdata/SSQX_test.nii.gz");
-    save_volume(SSQY, "testdata/SSQY_test.nii.gz");
-    save_volume(SSQZ, "testdata/SSQZ_test.nii.gz");
-    save_volume(FWHMX, "testdata/FWHMX_test.nii.gz");
-    save_volume(FWHMY, "testdata/FWHMY_test.nii.gz");
-    save_volume(FWHMZ, "testdata/FWHMZ_test.nii.gz");
+    //save_volume(SSQX, "testdata/SSQX_test.nii.gz");
+    //save_volume(SSQY, "testdata/SSQY_test.nii.gz");
+    //save_volume(SSQZ, "testdata/SSQZ_test.nii.gz");
+    //save_volume(FWHMX, "testdata/FWHMX_test.nii.gz");
+    //save_volume(FWHMY, "testdata/FWHMY_test.nii.gz");
+    //save_volume(FWHMZ, "testdata/FWHMZ_test.nii.gz");
 
     cout << "Residual " << R(R.xsize()/2-1, R.ysize()/2, R.zsize()/2, 0) << " "
                         << R(R.xsize()/2,   R.ysize()/2, R.zsize()/2, 0) << " "
@@ -516,7 +542,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   }
 
 
-  /*if(verbose)
+  if(false && verbose)
   {
     cout << "FWHMx = " << FWHM[X] << " mm, "
          << "FWHMy = " << FWHM[Y] << " mm";
@@ -525,7 +551,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
     cout << "DLH " << dLh << " voxels^-3" << endl;
     cout << "VOLUME " << mask_volume << " voxels" << endl;
     cout << "RESELS " << resels << " voxels per resel" << endl;
-  }*/ //aranyics
+  } //aranyics
 
   if(verbose)
   {
@@ -536,6 +562,113 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   cout << "FWHMmm " << FWHMmm[X] <<  " " << FWHMmm[Y] << " " << FWHMmm[Z] << endl;
   cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << endl; //aranyics
   }
+
+  return EXIT_SUCCESS;
+}
+
+
+
+int estimateRPV(NEWIMAGE::volume<float>& RPV, NEWIMAGE::volume<float>& FWHMimg,
+              NEWIMAGE::volume4D<float>& R,
+              NEWIMAGE::volume<float>& mask,
+              double dof, bool verbose)
+{
+  if(verbose) cerr << "Standardising....";      //aranyics @ every case of verbose.value()
+  unsigned long mask_volume = standardise(mask, R);           //aranyics
+  if(verbose) cerr << "done" << endl;
+
+  //if(verbose) cerr << "Masked-in voxels = " << mask_volume << endl;
+
+  double n = dof; //TODO
+  unsigned short D = 3; // TODO
+  if (D == 0) exit(EXIT_SUCCESS); //TODO
+  unsigned long N = 0;
+
+  enum {X = 0, Y, Z};
+  double SSminus[3] = {0, 0, 0}, S2[3] = {0, 0, 0};
+
+  // Creating volumes for RPV - aranyics
+  //RPV.reinitialize(mask, false); // FSL < 6.0.2
+  RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
+  RPV *= 0;
+  copyconvert(RPV, FWHMimg);
+  NEWIMAGE::volume<float> SSQ;
+  NEWIMAGE::volume<float> Lxx, Lxy, Lyy, Lxz, Lyz, Lzz;
+  copyconvert(RPV,SSQ);
+  copyconvert(RPV,Lxx);
+  copyconvert(RPV,Lxy);
+  copyconvert(RPV,Lyy);
+  copyconvert(RPV,Lxz);
+  copyconvert(RPV,Lyz);
+  copyconvert(RPV,Lzz);
+
+
+  bool usez = true;
+  int zstart=1;
+  if (!usez) zstart=0;
+  for ( unsigned short z = zstart; z < R.zsize() ; z++ )
+    for ( unsigned short y = 1; y < R.ysize() ; y++ )
+      for ( unsigned short x = 1; x < R.xsize() ; x++ )
+      {
+	// Sum over N
+	N++;
+
+	for ( unsigned short t = 0; t < R.tsize() ; t++ )
+	    if( (mask(x, y, z)>0.5) ) {
+		double dx = (x+1 < R.xsize()) ? R(x, y, z, t) - R(x+1, y, z, t) : 0.0;
+		double dy = (y+1 < R.ysize()) ? R(x, y, z, t) - R(x, y+1, z, t) : 0.0;
+		double dz = (z+1 < R.zsize()) ? R(x, y, z, t) - R(x, y, z+1, t) : 0.0;
+
+		SSQ(x, 1, 1) += R(x, y, z) * R(x, y, z);
+
+		if ( D >= 1 ) { Lxx(x, y, z) += dx * dx; };
+		if ( D >= 2 ) { Lxy(x, y, z) += dx * dy; Lyy(x, y, z) += dy * dy; };
+		if ( D >= 3 ) { Lxz(x, y, z) += dx * dz; Lyz(x, y, z) += dy * dz; Lzz(x, y, z) += dz * dz; };
+	    }
+      }
+
+  double q = pow( (4 * log(2)), D );
+  for ( unsigned short z = zstart; z < R.zsize() ; z++ )
+    for ( unsigned short y = 1; y < R.ysize() ; y++ )
+      for ( unsigned short x = 1; x < R.xsize() ; x++ )
+      {
+	if (mask(x, y, z) > 0.5)
+	{
+	  Lxx(x, y, z) = (Lxx(x, y, z) / R.tsize()) * (n/dof);
+	  Lxy(x, y, z) = (Lxy(x, y, z) / R.tsize()) * (n/dof);
+	  Lyy(x, y, z) = (Lyy(x, y, z) / R.tsize()) * (n/dof);
+	  Lxz(x, y, z) = (Lxz(x, y, z) / R.tsize()) * (n/dof);
+	  Lyz(x, y, z) = (Lyz(x, y, z) / R.tsize()) * (n/dof);
+	  Lzz(x, y, z) = (Lzz(x, y, z) / R.tsize()) * (n/dof);
+
+	  double reselVox = Lxx(x, y, z) * Lyy(x, y, z) * Lzz(x, y, z)     +
+                            Lxy(x, y, z) * Lyz(x, y, z) * Lxz(x, y, z) * 2 -
+                            Lxx(x, y, z) * Lyz(x, y, z) * Lyz(x, y, z)     -
+                            Lxy(x, y, z) * Lxy(x, y, z) * Lzz(x, y, z)     -
+                            Lxz(x, y, z) * Lyy(x, y, z) * Lxz(x, y, z);
+
+	  if (reselVox < 0.0) reselVox = 0.0;
+
+	  //RPV(x, y, z) = reselVox;
+	  RPV(x, y, z) = sqrt( reselVox / q );
+	}
+	  if ( isnan2(RPV(x, y, z)) ) RPV(x, y, z) = 0.0;
+	  FWHMimg(x, y, z) = pow(RPV(x, y, z), -(0.5));
+      }
+
+  if(false){
+    int kk = 100;
+  for ( unsigned short z = zstart; z < R.zsize() ; z++ )
+    for ( unsigned short y = 1; y < R.ysize() ; y++ )
+      for ( unsigned short x = 1; x < R.xsize() ; x++ )
+      {
+	if (mask(x,y,z) > 0.5 && kk > 0) {
+	    kk--;
+	    //cout << Lxx(x, y, z) << " "  << RPV(x, y, z) << endl;
+	}
+      }
+  }
+
 
   return EXIT_SUCCESS;
 }
