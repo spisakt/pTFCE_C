@@ -22,6 +22,9 @@ Option<bool> help(string("-h,--help"), false,
 Option<float> dof(string("-d,--dof"), 100.0,
 	  string("number of degrees of freedom"),
 	  true, requires_argument);
+Option<int> local(string("-l,--rpv"), 0,
+	  string("local smoothness estimation (0* - none; 1 - FSLRPV; 2 - SPMRPV)"),
+	  true, requires_argument);
 Option<string> maskname(string("-m,--mask"), "mask",
 	    string("brain mask volume"),
 	    true, requires_argument);
@@ -50,12 +53,15 @@ int main(int argc, char **argv) {
   double FWHM_vox[3];
   double FWHM_mm[3];
   double sigmasq[3];
+  volume<float> RPV;
+  volume<float> FWHMimg;
 
   OptionParser options(title, examples);
 
   options.add(verbose);
   options.add(help);
   options.add(dof);
+  options.add(local);
   options.add(maskname);
   options.add(residname);
   options.add(zstatname);
@@ -128,6 +134,22 @@ int main(int argc, char **argv) {
 	     R,
 	     mask,
 	     dof.value(), verbose.value());
+
+  if (local.value() == 1)
+  {
+    smoothestVox(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq, RPV, FWHMimg,
+                  R, mask,
+                  dof.value(), verbose.value());
+    save_volume(RPV, "testdata/smoothest_app_fslrpv.nii.gz");
+
+  }
+  if (local.value() == 2)
+  {
+    estimateRPV(RPV, FWHMimg,
+                  R, mask,
+                  dof.value(), verbose.value());
+    save_volume(RPV, "testdata/smoothest_app_spmrpv.nii.gz");
+  }
 
 
   return status;
