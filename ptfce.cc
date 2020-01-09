@@ -341,7 +341,6 @@ void pTFCE<T>::saveFWHM(const string& filename)
 template <class T>
 void pTFCE<T>::setRFTAdjust(bool a)
 {
-    std::cout << "RFT adjustment = " << a << std::endl;
     adjustClusterSize = a;
 }
 

@@ -1,8 +1,13 @@
+// TODO there are differences between computing RPV and loading precomputed RPV image
+// TODO correct resel size adjustment
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cmath>
 #include <chrono>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "ndf.h"
 #include "newimage/newimageall.h"
 #include "smoothest_ext.h"
@@ -20,6 +25,7 @@
 #define POSIX_SOURCE 1
 
 static void appendLineToFile(string filepath, string line);
+static void makeDirectoryPortable(string dirname);
 
 using namespace Utilities;
 using namespace NEWIMAGE;
@@ -202,12 +208,22 @@ int main(int argc, char* argv[])
     {
 	std::stringstream tLineStream;
 	tLineStream << zstatname.value() << ","
+	            << enhance.getRPVEstimationMode() << ","
 	            << tSmoothest.count() << ","
 	            << tPTFCE.count();
 	appendLineToFile(operationtime.value(), tLineStream.str());
     }
 
     // Save enhanced volume TODO
+    size_t zstatPathSep = zstatname.value().find_last_of("/\\");
+    string zstatPath = zstatname.value().substr(0,zstatPathSep);
+    string zstatFile = zstatname.value().substr(zstatPathSep);
+    size_t zstatExtSep = zstatFile.find_last_of(".");
+    string zstatFileBase = zstatFile.substr(0,zstatExtSep);
+    if ( zstatPath == zstatFile ) zstatPath = ".";
+    string outdir = zstatPath + "/" + "pTFCE";
+    makeDirectoryPortable(outdir);
+
     string fn_p, fn_lp, fn_z, fn_rpv, fn_fwhm;
     switch( enhance.getRPVEstimationMode() )
     {
@@ -215,32 +231,32 @@ int main(int argc, char* argv[])
 	{
 	    if ( ! enhance.getRFTAdjust() )
 	    {
-		fn_p  = "testdata/pTFCE_global.nii.gz";
-		fn_lp = "testdata/logpTFCE_global.nii.gz";
-		fn_z  = "testdata/ZpTFCE_global.nii.gz";
+		fn_p  = outdir + "/" + zstatFileBase + "_global_pTFCE.nii.gz";
+		fn_lp = outdir + "/" + zstatFileBase + "_global_logpTFCE.nii.gz";
+		fn_z  = outdir + "/" + zstatFileBase + "_global_ZpTFCE.nii.gz";
 	    }
 	    else
 	    {
-		fn_p  = "testdata/pTFCE_local.nii.gz";
-		fn_lp = "testdata/logpTFCE_local.nii.gz";
-		fn_z  = "testdata/ZpTFCE_local.nii.gz";
+		fn_p  = outdir + "/" + zstatFileBase + "_local_pTFCE.nii.gz";
+		fn_lp = outdir + "/" + zstatFileBase + "_local_logpTFCE.nii.gz";
+		fn_z  = outdir + "/" + zstatFileBase + "_local_ZpTFCE.nii.gz";
 	    }
 	} break;
 	case FSLRPV:
 	{
-	    fn_p  = "testdata/pTFCE_fslrpv.nii.gz";
-	    fn_lp = "testdata/logpTFCE_fslrpv.nii.gz";
-	    fn_z  = "testdata/ZpTFCE_fslrpv.nii.gz";
-	    fn_rpv  = "testdata/RPV_fslrpv.nii.gz";
-	    fn_fwhm = "testdata/FWHM_fslrpv.nii.gz";
+	    fn_p  = outdir + "/" + zstatFileBase + "_fslrpv_pTFCE.nii.gz";
+	    fn_lp = outdir + "/" + zstatFileBase + "_fslrpv_logpTFCE.nii.gz";
+	    fn_z  = outdir + "/" + zstatFileBase + "_fslrpv_ZpTFCE.nii.gz";
+	    fn_rpv  = outdir + "/" + zstatFileBase + "_fslrpv_RPV.nii.gz";
+	    fn_fwhm = outdir + "/" + zstatFileBase + "_fslrpv_FWHM.nii.gz";
 	} break;
 	case SPMRPV:
 	{
-	    fn_p  = "testdata/pTFCE_spmrpv.nii.gz";
-	    fn_lp = "testdata/logpTFCE_spmrpv.nii.gz";
-	    fn_z  = "testdata/ZpTFCE_spmrpv.nii.gz";
-	    fn_rpv  = "testdata/RPV_spmrpv.nii.gz";
-	    fn_fwhm = "testdata/FWHM_spmrpv.nii.gz";
+	    fn_p  = outdir + "/" + zstatFileBase + "_spmrpv_pTFCE.nii.gz";
+	    fn_lp = outdir + "/" + zstatFileBase + "_spmrpv_logpTFCE.nii.gz";
+	    fn_z  = outdir + "/" + zstatFileBase + "_spmrpv_ZpTFCE.nii.gz";
+	    fn_rpv  = outdir + "/" + zstatFileBase + "_spmrpv_RPV.nii.gz";
+	    fn_fwhm = outdir + "/" + zstatFileBase + "_spmrpv_FWHM.nii.gz";
 	} break;
     }
 
@@ -270,4 +286,18 @@ static void appendLineToFile(string filepath, string line)
     file.exceptions(file.exceptions() | std::ios::failbit | std::ifstream::badbit);
 
     file << line << std::endl;
+}
+
+static void makeDirectoryPortable(string dirname)
+{
+    mode_t nMode = 0733;
+    int nError = 0;
+#if defined(_WIN32)
+	nError = _mkdir(dirname.c_str()); // can be used on Windows
+#else
+	nError = mkdir(dirname.c_str(),nMode); // can be used on non-Windows
+#endif
+    if (nError != 0) {
+    // handle your error here
+    }
 }
