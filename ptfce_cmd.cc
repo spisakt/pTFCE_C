@@ -1,5 +1,8 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cmath>
+#include <chrono>
 #include "ndf.h"
 #include "newimage/newimageall.h"
 #include "smoothest_ext.h"
@@ -15,6 +18,8 @@
 
 #define _GNU_SOURCE 1
 #define POSIX_SOURCE 1
+
+static void appendLineToFile(string filepath, string line);
 
 using namespace Utilities;
 using namespace NEWIMAGE;
@@ -46,6 +51,9 @@ Option<string> rpvname(string("-l,--rpv"), "rpv",
 Option<int> rpvmode(string("-s,--smmode"), 0,
 	  string("local smoothness estimation mode 0-none, 1-fsl, 2-spm"),
 	  false, requires_argument);
+Option<string> operationtime(string("-o,--otime"), "otime",
+	     string("filename to save operation time into"),
+	     false, requires_argument);
 
 
 string title = "\
@@ -60,6 +68,10 @@ int main(int argc, char* argv[])
 
     int status = 0;
 
+    std::chrono::high_resolution_clock::time_point t1, t2;
+    std::chrono::duration<double> tSmoothest;
+    std::chrono::duration<double> tPTFCE;
+
     OptionParser options(title, examples);
     options.add(zstatname);
     options.add(maskname);
@@ -68,6 +80,7 @@ int main(int argc, char* argv[])
     options.add(nthr);
     options.add(rpvmode);
     options.add(rpvname);
+    options.add(operationtime);
     options.add(verbose);
     options.add(help);
     options.parse_command_line(argc, argv);
@@ -155,7 +168,10 @@ int main(int argc, char* argv[])
         enhance.setRFTAdjust(false);
     if (rpvname.set())
         enhance.loadRPV( rpvname.value() );
+    t1 = std::chrono::high_resolution_clock::now();
     enhance.estimateSmoothness();
+    t2 = std::chrono::high_resolution_clock::now();
+    tSmoothest = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     if (verbose.value()) enhance.printSmoothness();
 
     enhance.setThresholdCount(nthr.value()); //deafult in R package
@@ -167,16 +183,29 @@ int main(int argc, char* argv[])
 	cout << "help = " << help.value() << endl;
 	cout << "dof = " << dof.value() << endl;
 	cout << "maskname = " << maskname.value() << endl;
-	cout << "residname = " << residname.value() << endl;
-	cout << "zstatname = " << zstatname.value() << endl;
-	cout << "rpvname = " << rpvname.value() << endl;
+	cout << "residname = " << (residname.set() ? residname.value() : "-") << endl;
+	cout << "zstatname = " << (zstatname.set() ? zstatname.value() : "-") << endl;
+	cout << "rpvname = " << (rpvname.set() ? rpvname.value() : "-") << endl;
 	cout << "rpvmode = " << enhance.getRPVEstimationMode() << endl;
 	cout << "rpvadjustment = " << enhance.getRFTAdjust() << endl;
 	cout << "thresholdCount = " << nthr.value() << endl;
+	cout << "timelogFile = " << (operationtime.set() ? operationtime.value() : "-") << endl;
     }
 
 
+    t1 = std::chrono::high_resolution_clock::now();
     enhance.calculate();
+    t2 = std::chrono::high_resolution_clock::now();
+    tPTFCE = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+
+    if ( operationtime.set() )
+    {
+	std::stringstream tLineStream;
+	tLineStream << zstatname.value() << ","
+	            << tSmoothest.count() << ","
+	            << tPTFCE.count();
+	appendLineToFile(operationtime.value(), tLineStream.str());
+    }
 
     // Save enhanced volume TODO
     string fn_p, fn_lp, fn_z, fn_rpv, fn_fwhm;
@@ -225,4 +254,20 @@ int main(int argc, char* argv[])
     }
 
     return status;
+}
+
+
+static void appendLineToFile(string filepath, string line)
+{
+    std::ofstream file;
+    //can't enable exception now because of gcc bug that raises ios_base::failure with useless message
+    //file.exceptions(file.exceptions() | std::ios::failbit);
+    file.open(filepath, std::ios::out | std::ios::app);
+    if (file.fail())
+        throw std::ios_base::failure(std::strerror(errno));
+
+    //make sure write fails with exception if something is wrong
+    file.exceptions(file.exceptions() | std::ios::failbit | std::ifstream::badbit);
+
+    file << line << std::endl;
 }
