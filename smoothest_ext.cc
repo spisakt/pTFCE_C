@@ -297,8 +297,8 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   }
 
   // Creating volumes for RPV - aranyics
-  RPV.reinitialize(mask, false); //FSL < 6.0.2
-  //RPV.reinitialize(mask, TEMPLATE); // FSL <= 6.0.2
+  //RPV.reinitialize(mask, false); //FSL < 6.0.2
+  RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
   RPV *= 0;
   copyconvert(RPV, FWHMimg);
   NEWIMAGE::volume<float> SS_X, SS_Y, SS_Z;

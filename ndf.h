@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cfloat>
+#include <limits>
 
 #if !defined(M_PI)
 #define M_PI (4 * atan(1.0))

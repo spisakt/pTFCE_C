@@ -5,3 +5,5 @@ pTFCE-test
 ptfce
 pTFCE
 smoothest
+build/
+.vscode/
