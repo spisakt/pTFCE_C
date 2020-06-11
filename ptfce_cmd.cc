@@ -203,6 +203,7 @@ int main(int argc, char* argv[])
     enhance.calculate();
     t2 = std::chrono::high_resolution_clock::now();
     tPTFCE = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    cout << "diag: " << "time: " << tPTFCE.count() << endl;
 
     if ( operationtime.set() )
     {
@@ -214,15 +215,23 @@ int main(int argc, char* argv[])
 	appendLineToFile(operationtime.value(), tLineStream.str());
     }
 
-    // Save enhanced volume TODO
+    // Save enhanced volume TODO - find_last_of /\\ nem mukodik, ha nincs perjel az eleresi utban
     size_t zstatPathSep = zstatname.value().find_last_of("/\\");
+    cout << "na mi?1" << zstatname << " " << zstatPathSep << endl;
     string zstatPath = zstatname.value().substr(0,zstatPathSep);
+    cout << "na mi?2" << endl;
     string zstatFile = zstatname.value().substr(zstatPathSep);
+    cout << "na mi?3" << endl;
     size_t zstatExtSep = zstatFile.find_last_of(".");
+    cout << "na mi?4" << endl;
     string zstatFileBase = zstatFile.substr(0,zstatExtSep);
+    cout << "na mi?5" << endl;
     if ( zstatPath == zstatFile ) zstatPath = ".";
+    cout << "na mi?6" << endl;
     string outdir = zstatPath + "/" + "pTFCE";
+    cout << "na mi?7" << endl;
     makeDirectoryPortable(outdir);
+    cout << "na mi?8" << endl;
 
     string fn_p, fn_lp, fn_z, fn_rpv, fn_fwhm;
     switch( enhance.getRPVEstimationMode() )

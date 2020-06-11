@@ -33,7 +33,7 @@ class pTFCE
     double ZestThr;		//Cluster-forming Z threshold below which P(h|c) is estimated as P(h), due to limitations of GRF theory (default: 1.3)
     bool _verbose;		//Print progress bar and diagnostic messages
 
-    double aggregateLogp(NEWMAT::ColumnVector &pvals);
+    T aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals=false);
 
   public:
     pTFCE(volume<T> img, volume<T> mask) : img(img), mask(mask)
