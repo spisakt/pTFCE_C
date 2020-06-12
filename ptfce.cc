@@ -108,7 +108,7 @@ T pTFCE<T>::aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals)
     {
 		if (printpvals) cout << "diag: " << "aggr: " << i << " pval: " << pvals(i) << endl;
 	    pvals(i) = -1 * log(pvals(i));
-	    if (isinf(pvals(i))) pvals(i) = 745;
+	    if (isinf(pvals(i)) || isnan(pvals(i))) pvals(i) = 745.0;
 		if (printpvals) cout << "diag: " << "aggr: " << i << " nlog pval: " << pvals(i) << endl;
 	    aggr+=pvals(i);
     }
@@ -145,8 +145,8 @@ int pTFCE<T>::calculate()
 		this->estimateSmoothness();
     }
 
-	cout << "diag: " << "image value: " << img.value(30, 40, 30) << endl;
-	cout << "diag: " << "mask value: " << mask.value(30, 40, 30) << endl;
+	cout << "diag: " << "image value: " << img.value(40, 40, 40) << endl;
+	cout << "diag: " << "mask value: " << mask.value(40, 40, 40) << endl;
 	cout << "diag: " << "Nh: " << Nh << endl;
 	cout << "diag: " << "dh: " << dh << endl;
 	cout << "diag: " << "dof: " << dof << endl;
@@ -154,7 +154,7 @@ int pTFCE<T>::calculate()
 	cout << "diag: " << "Voxels: " << V << endl;
 	cout << "diag: " << "Resels: " << resels << endl;
 	cout << "diag: " << "dLh: " << dLh << endl;
-	if (RPVMode != 0) cout << "diag: " << "RPV value: " << RPV.value(30, 40, 30) << endl;
+	if (RPVMode != 0) cout << "diag: " << "RPV value: " << RPV.value(40, 40, 40) << endl;
 	cout << "diag: " << "autosmooth: " << autosmooth << endl;
 	cout << "diag: " << "RPVmode: " << RPVMode << endl;
 	cout << "diag: " << "local smth adjustment: " << adjustClusterSize << endl;
@@ -223,7 +223,7 @@ int pTFCE<T>::calculate()
 		PVC.addvolume(pvoxclust);
 
 
-		cout << "diag: " << "Nh: " << i+1 << ", PVC value: " << PVC.value(30, 40, 30) << endl;
+		cout << "diag: " << "Nh: " << i+1 << ", PVC value: " << PVC.value(40, 40, 40) << endl;
     }
 
     if (_verbose) std::cout << "...done" << std::endl;
@@ -253,7 +253,7 @@ int pTFCE<T>::calculate()
 				NEWMAT::ColumnVector allpvox;
 				double aggr;
 				allpvox = PVC.voxelts(x, y, z);
-				if (x == 30 && y == 40 && z == 30)
+				if (x == 40 && y == 40 && z == 40)
 				{
 					aggr = aggregateLogp(allpvox, true);
 				}
@@ -273,15 +273,18 @@ int pTFCE<T>::calculate()
 				if (p == 1.0) p = 1.0-std::numeric_limits<T>::min();
 				Z_pTFCE.value(x,y,z)  = qnormR(p, 0.0, 1.0, false, false);
 
-				if (x == 30 && y == 40 && z == 30)
+				if (x == 40 && y == 40 && z == 40)
 				{
 					//cout << "diag: " << "PVC ts values: " << allpvox << endl;
 					cout << "diag: " << "aggregated log p: " << aggr << endl;
 					cout << "diag: " << "aggregated p: " << p << endl;
-					cout << "diag: " << "pTFCE value: " << pTFCEimg.value(30, 40, 30) << endl;
-					cout << "diag: " << "Z_pTFCE value: " << Z_pTFCE.value(30, 40, 30) << endl;
+					cout << "diag: " << "pTFCE value: " << pTFCEimg.value(40, 40, 40) << endl;
+					cout << "diag: " << "Z_pTFCE value: " << Z_pTFCE.value(40, 40, 40) << endl;
 				}
 			}
+
+	cout << "diag: " << "pTFCE value pro: " << pTFCEimg.value(40, 40, 40) << endl;
+	cout << "diag: " << "Z_pTFCE value pro: " << Z_pTFCE.value(40, 40, 40) << endl;
 
     if (autosmooth || resels > 0)
     {
