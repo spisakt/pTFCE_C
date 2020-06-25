@@ -54,6 +54,15 @@ Option<string> residname(string("-r,--res"), "res4d",
 Option<string> rpvname(string("-l,--rpv"), "rpv",
 	     string("local roughness image (RPV)"),
 	     false, requires_argument);
+Option<float> gRd(string("-x,--rd"), 0.0,
+	  string("\tglobal smoothness: Rd"),
+	  false, requires_argument);
+Option<int> gVoxels(string("-y,--voxels"), 0,
+	  string("global smoothness: Voxels"),
+	  false, requires_argument);
+Option<float> gResels(string("-w,--resels"), 0.0,
+	  string("global smoothness: Resels"),
+	  false, requires_argument);
 Option<int> rpvmode(string("-s,--smmode"), 0,
 	  string("local smoothness estimation mode 0-none, 1-fsl, 2-spm"),
 	  false, requires_argument);
@@ -86,6 +95,9 @@ int main(int argc, char* argv[])
     options.add(nthr);
     options.add(rpvmode);
     options.add(rpvname);
+    options.add(gRd);
+    options.add(gVoxels);
+    options.add(gResels);
     options.add(operationtime);
     options.add(verbose);
     options.add(help);
@@ -167,6 +179,9 @@ int main(int argc, char* argv[])
 
     if (verbose.value()) enhance.verbose();
 
+    if (gRd.set() && gVoxels.set() && gResels.set())
+        enhance.setSmoothness( gRd.value(), gVoxels.value(), gResels.value() );
+    // TODO - cover cases when global smoothness is set, but local calculations are needed
     enhance.setRPVEstimationMode(rpvmode.value());
     if (rpvmode.value() != 0)
         enhance.setRFTAdjust(true);

@@ -103,12 +103,13 @@ template <class T>
 T pTFCE<T>::aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals)
 {
 
+    double nlogmin = -1 * log(std::numeric_limits<double>::min());
     T aggr=0;
     for (int i = 1; i <= pvals.n_rows; ++i)
     {
 		if (printpvals) cout << "diag: " << "aggr: " << i << " pval: " << pvals(i) << endl;
 	    pvals(i) = -1 * log(pvals(i));
-	    if (isinf(pvals(i)) || isnan(pvals(i))) pvals(i) = 745.0;
+	    if (isinf(pvals(i)) || isnan(pvals(i))) pvals(i) = nlogmin;
 		if (printpvals) cout << "diag: " << "aggr: " << i << " nlog pval: " << pvals(i) << endl;
 	    aggr+=pvals(i);
     }
