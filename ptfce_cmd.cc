@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cmath>
 #include <chrono>
+#include <iomanip>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "ndf.h"
@@ -225,8 +226,12 @@ int main(int argc, char* argv[])
     if ( operationtime.set() )
     {
 	std::stringstream tLineStream;
-	tLineStream << zstatname.value() << ","
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	tLineStream << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S") << ","
+	            << zstatname.value() << ","
 	            << enhance.getRPVEstimationMode() << ","
+	            << enhance.getThresholdCount() << ","
 	            << tSmoothest.count() << ","
 	            << tPTFCE.count();
 	appendLineToFile(operationtime.value(), tLineStream.str());

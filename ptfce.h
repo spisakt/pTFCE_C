@@ -80,6 +80,7 @@ class pTFCE
     int calculate();
 
     void setThresholdCount(int N);
+    int  getThresholdCount();
     void setSmoothness(double Rd, unsigned long V, double resels);
     void setRPVEstimationMode(int mode);
     int  getRPVEstimationMode();

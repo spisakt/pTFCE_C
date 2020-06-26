@@ -327,6 +327,12 @@ void pTFCE<T>::setThresholdCount(int N)
 }
 
 template <class T>
+int pTFCE<T>::getThresholdCount()
+{
+    return this->Nh;
+}
+
+template <class T>
 void pTFCE<T>::setSmoothness(double Rd, unsigned long V, double resels)
 {
     this->Rd     = Rd;
