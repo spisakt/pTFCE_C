@@ -45,7 +45,7 @@ string examples = "\
 
 int main(int argc, char **argv) {
 
-  int status;
+  int status = 0;
 
   double dlh;
   unsigned long mask_volume;
@@ -130,17 +130,20 @@ int main(int argc, char **argv) {
   }
 
 
-  status = smoothest(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq,
+  if (local.value() == 0)
+  {
+    status = smoothest(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq,
 	     R,
 	     mask,
 	     dof.value(), verbose.value());
+  }
 
   if (local.value() == 1)
   {
     smoothestVox(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq, RPV, FWHMimg,
                   R, mask,
                   dof.value(), verbose.value());
-    save_volume(RPV, "testdata/smoothest_app_fslrpv.nii.gz");
+    save_volume(RPV, "smoothest_app_fslrpv.nii.gz");
 
   }
   if (local.value() == 2)
@@ -148,7 +151,7 @@ int main(int argc, char **argv) {
     estimateRPV(RPV, FWHMimg,
                   R, mask,
                   dof.value(), verbose.value());
-    save_volume(RPV, "testdata/smoothest_app_spmrpv.nii.gz");
+    save_volume(RPV, "smoothest_app_spmrpv.nii.gz");
   }
 
 
