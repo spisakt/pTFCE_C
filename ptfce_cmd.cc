@@ -223,20 +223,6 @@ int main(int argc, char* argv[])
     tPTFCE = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     cout << "diag: " << "time: " << tPTFCE.count() << endl;
 
-    if ( operationtime.set() )
-    {
-	std::stringstream tLineStream;
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	tLineStream << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S") << ","
-	            << zstatname.value() << ","
-	            << enhance.getRPVEstimationMode() << ","
-	            << enhance.getThresholdCount() << ","
-	            << tSmoothest.count() << ","
-	            << tPTFCE.count();
-	appendLineToFile(operationtime.value(), tLineStream.str());
-    }
-
     // Save enhanced volume TODO - find_last_of /\\ nem mukodik, ha nincs perjel az eleresi utban
     size_t zstatPathSep = zstatname.value().find_last_of("/\\");
     string zstatPath = zstatname.value().substr(0,zstatPathSep);
@@ -293,6 +279,20 @@ int main(int argc, char* argv[])
     {
 	enhance.saveRPV(fn_rpv);
 	enhance.saveFWHM(fn_fwhm);
+    }
+
+    if ( operationtime.set() )
+    {
+	std::stringstream tLineStream;
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	tLineStream << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S") << ","
+	            << zstatname.value() << ","
+	            << enhance.getRPVEstimationMode() << ","
+	            << enhance.getThresholdCount() << ","
+	            << tSmoothest.count() << ","
+	            << tPTFCE.count();
+	appendLineToFile(operationtime.value(), tLineStream.str());
     }
 
     return status;

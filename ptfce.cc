@@ -256,7 +256,7 @@ int pTFCE<T>::calculate()
 				allpvox = PVC.voxelts(x, y, z);
 				if (x == 40 && y == 40 && z == 40)
 				{
-					aggr = aggregateLogp(allpvox, true);
+					aggr = aggregateLogp(allpvox, false);
 				}
 				else
 				{
@@ -277,15 +277,15 @@ int pTFCE<T>::calculate()
 				if (x == 40 && y == 40 && z == 40)
 				{
 					//cout << "diag: " << "PVC ts values: " << allpvox << endl;
-					cout << "diag: " << "aggregated log p: " << aggr << endl;
-					cout << "diag: " << "aggregated p: " << p << endl;
-					cout << "diag: " << "pTFCE value: " << pTFCEimg.value(40, 40, 40) << endl;
-					cout << "diag: " << "Z_pTFCE value: " << Z_pTFCE.value(40, 40, 40) << endl;
+					//cout << "diag: " << "aggregated log p: " << aggr << endl;
+					//cout << "diag: " << "aggregated p: " << p << endl;
+					//cout << "diag: " << "pTFCE value: " << pTFCEimg.value(40, 40, 40) << endl;
+					//cout << "diag: " << "Z_pTFCE value: " << Z_pTFCE.value(40, 40, 40) << endl;
 				}
 			}
 
-	cout << "diag: " << "pTFCE value pro: " << pTFCEimg.value(40, 40, 40) << endl;
-	cout << "diag: " << "Z_pTFCE value pro: " << Z_pTFCE.value(40, 40, 40) << endl;
+	//cout << "diag: " << "pTFCE value pro: " << pTFCEimg.value(40, 40, 40) << endl;
+	//cout << "diag: " << "Z_pTFCE value pro: " << Z_pTFCE.value(40, 40, 40) << endl;
 
     if (autosmooth || resels > 0)
     {
