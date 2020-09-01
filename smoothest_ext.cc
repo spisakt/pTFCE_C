@@ -289,6 +289,8 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   unsigned long N = 0;
   unsigned int D = 3;
 
+  double RPVsum = 0.0;
+
   // MJ additions to make it cope with 2D images
   bool usez = true;
   if (R.zsize() <= 1) { usez = false; D = 2; }
@@ -297,8 +299,8 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   }
 
   // Creating volumes for RPV - aranyics
-  //RPV.reinitialize(mask, false); //FSL < 6.0.2
-  RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
+  RPV.reinitialize(mask, false); //FSL < 6.0.2
+  //RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
   RPV *= 0;
   copyconvert(RPV, FWHMimg);
   NEWIMAGE::volume<float> SS_X, SS_Y, SS_Z;
@@ -513,6 +515,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 	    RPVZ(x, y, z) = pow( 4 * log( fabs(S2Z(x, y, z) / SS_Z(x, y, z)) ) , 0.5 ) * pow(8 * log(2), -0.5);
 
 	    RPV(x, y, z) = RPVX(x, y, z) * RPVY(x, y, z) * RPVZ(x, y, z);
+	    RPVsum += RPV(x, y, z);
 	}
 	    //if ( isnan2(RPV(x, y, z)) ) RPV(x, y, z) = 0.0;
 
@@ -558,6 +561,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   cout << "DLH " << dLh << endl;
   cout << "VOLUME " << mask_volume << endl;
   cout << "RESELS " << resels << endl;
+  cout << "RPVsum " << RPVsum << endl;
   cout << "FWHMvoxel " << FWHM[X] << " " <<  FWHM[Y] << " " << FWHM[Z] << endl;
   cout << "FWHMmm " << FWHMmm[X] <<  " " << FWHMmm[Y] << " " << FWHMmm[Z] << endl;
   cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << endl; //aranyics
@@ -588,8 +592,8 @@ int estimateRPV(NEWIMAGE::volume<float>& RPV, NEWIMAGE::volume<float>& FWHMimg,
   double SSminus[3] = {0, 0, 0}, S2[3] = {0, 0, 0};
 
   // Creating volumes for RPV - aranyics
-  //RPV.reinitialize(mask, false); // FSL < 6.0.2
-  RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
+  RPV.reinitialize(mask, false); // FSL < 6.0.2
+  //RPV.reinitialize(mask, TEMPLATE); // FSL >= 6.0.2
   RPV *= 0;
   copyconvert(RPV, FWHMimg);
   NEWIMAGE::volume<float> SSQ;

@@ -209,8 +209,8 @@ int pTFCE<T>::calculate()
 			else
 			{
 			//clustersize given is resel must be converted to voxel units, hence the multiplications with "resels" (resel size)
-			//mean of the RPV image * "resels" does not exactle equal 1 TODO - check border voxels -- steve ??
-	if (_verbose) cout << "*RESELS************************** " << resels << " threhold " << thres << " clustersizez(i) " << clustersizes(i) << " clusterresels(i) " << clusterresels(i) << " clusterresels(i) * resels " << clusterresels(i) * resels << endl;
+			//mean of the RPV image * "resels" does not exactle equal 1 (it's ~ 0.993) TODO - check border voxels
+	if (_verbose) cout << "*RESELS************************** " << resels << " threshold " << thres << " clustersizez(i) " << clustersizes(i) << " clusterresels(i) " << clusterresels(i) << " clusterresels(i) * resels " << clusterresels(i) * resels << endl;
 			struct dcl_params params = {V, Rd, clusterresels(i) * resels, ZestThr};
 			pvc = pvox_clust(thres, &params);
 			}
