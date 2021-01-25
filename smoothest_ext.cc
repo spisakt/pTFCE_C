@@ -249,25 +249,14 @@ int smoothest(double &dLh, unsigned long &mask_volume, double &resels, double *F
   FWHMmm[Y] = FWHM[Y]*R.ydim();
   FWHMmm[Z] = FWHM[Z]*R.zdim();
 
-  /*if(verbose)
-  {
-    cout << "FWHMx = " << FWHM[X] << " mm, "
-	 << "FWHMy = " << FWHM[Y] << " mm";
-    if (usez) cout << ", FWHMz = " << FWHM[Z] << " mm";
-    cout << endl;
-    cout << "DLH " << dLh << " voxels^-3" << endl;
-    cout << "VOLUME " << mask_volume << " voxels" << endl;
-    cout << "RESELS " << resels << " voxels per resel" << endl;
-  }*/ //aranyics
-
   if(verbose)
   {
   cout << "DLH " << dLh << endl;
   cout << "VOLUME " << mask_volume << endl;
   cout << "RESELS " << resels << endl;
-  cout << "FWHMvoxel " << FWHM[X] << " " <<  FWHM[Y] << " " << FWHM[Z] << endl;
-  cout << "FWHMmm " << FWHMmm[X] <<  " " << FWHMmm[Y] << " " << FWHMmm[Z] << endl;
-  cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << endl; //aranyics
+  cout << "FWHMvoxel x:" << FWHM[X] << " y:" <<  FWHM[Y] /*<< " z:" << FWHM[Z]*/ << endl;
+  cout << "FWHMmm x:" << FWHMmm[X] <<  " y:" << FWHMmm[Y] /*<< " z:" << FWHMmm[Z]*/ << endl;
+  cout << "sigmasq x:" << sigmasq[X] << " y:" << sigmasq[Y] /*<< " z:" << sigmasq[Z]*/ << endl; //aranyics
   }
 
   return EXIT_SUCCESS;
@@ -562,9 +551,9 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
   cout << "VOLUME " << mask_volume << endl;
   cout << "RESELS " << resels << endl;
   cout << "RPVsum " << RPVsum << endl;
-  cout << "FWHMvoxel " << FWHM[X] << " " <<  FWHM[Y] << " " << FWHM[Z] << endl;
-  cout << "FWHMmm " << FWHMmm[X] <<  " " << FWHMmm[Y] << " " << FWHMmm[Z] << endl;
-  cout << "sigmasq " << sigmasq[X] << " " << sigmasq[Y] << " " << sigmasq[Z] << endl; //aranyics
+  cout << "FWHMvoxel x:" << FWHM[X] << " y:" <<  FWHM[Y] /*<< " z:" << FWHM[Z]*/ << endl;
+  cout << "FWHMmm x:" << FWHMmm[X] <<  " y:" << FWHMmm[Y] /*<< " z:" << FWHMmm[Z]*/ << endl;
+  cout << "sigmasq x:" << sigmasq[X] << " y:" << sigmasq[Y] /*<< " z:" << sigmasq[Z]*/ << endl; //aranyics
   }
 
   return EXIT_SUCCESS;
@@ -572,6 +561,7 @@ int smoothestVox(double &dLh, unsigned long &mask_volume, double &resels, double
 
 
 
+/* estimateRPV is based on SPM's RPV algorithm */
 int estimateRPV(NEWIMAGE::volume<float>& RPV, NEWIMAGE::volume<float>& FWHMimg,
               NEWIMAGE::volume4D<float>& R,
               NEWIMAGE::volume<float>& mask,

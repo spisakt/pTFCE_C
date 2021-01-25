@@ -27,13 +27,14 @@ class pTFCE
     double dLh;			//
     volume<T> RPV;              //Resels per Voxel image
     volume<T> FWHMimg;          //FWHM image
+    volume4D<int> LABEL;        //Cluster label 4D image for each threshold
     bool adjustClusterSize;     //RFT cluster-size adjustment based on RPV
     unsigned int autosmooth;	//Smoothness estimation mode (0-manual; 1-Z image; 2-residual image) TODO proper mode selection
     int RPVMode;		//Local smoothness implementation mode (1-FSL*; 2-SPM)
     double ZestThr;		//Cluster-forming Z threshold below which P(h|c) is estimated as P(h), due to limitations of GRF theory (default: 1.3)
     bool _verbose;		//Print progress bar and diagnostic messages
 
-    T aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals=false);
+    double aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals=false);
 
   public:
     pTFCE(volume<T> img, volume<T> mask) : img(img), mask(mask)
@@ -88,6 +89,7 @@ class pTFCE
     void loadRPV(const string& filename);
     void saveRPV(const string& filename);
     void saveFWHM(const string& filename);
+    void saveLABEL(const string& filename);
     void setRFTAdjust(bool a);
     int  getRFTAdjust();
     void setZestThr(double Z);

@@ -63,7 +63,7 @@ void volumeClust<T>::sumClusterRPVValues(volume<T> &RPV, ColumnVector &sums)
 
     for( int i = 1; i <= MISCMATHS::round(this->max()); ++i )
     {
-//cout << "*SUM RPV*************************************** " << sums(i) << "correction factor for nan" << allVox(i)/nonanVox(i) << endl;
+        //cout << "*SUM RPV*************************************** " << sums(i) << "correction factor for nan" << allVox(i)/nonanVox(i) << endl;
         sums(i) *= allVox(i) / nonanVox(i);
     }
 

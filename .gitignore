@@ -1,4 +1,5 @@
 testdata/
+trash/
 *.o
 connectedcompsize
 pTFCE-test
@@ -7,3 +8,4 @@ pTFCE
 smoothest
 build/
 .vscode/
+archive/

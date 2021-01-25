@@ -1,6 +1,3 @@
-// TODO there are differences between computing RPV and loading precomputed RPV image
-// TODO correct resel size adjustment
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -84,6 +81,8 @@ int main(int argc, char* argv[])
 
     int status = 0;
 
+    // 1. Parse options
+
     std::chrono::high_resolution_clock::time_point t1, t2;
     std::chrono::duration<double> tSmoothest;
     std::chrono::duration<double> tPTFCE;
@@ -127,7 +126,7 @@ int main(int argc, char* argv[])
     }
 
 
-    // Load data
+    // 2. Load data
     NEWIMAGE::volume<float> img;
     NEWIMAGE::volume4D<float> R;
     NEWIMAGE::volume<float> mask;
@@ -137,32 +136,32 @@ int main(int argc, char* argv[])
     if (verbose.value()) cout << "********************************" << endl;
 
     // Read the mask image (single volume)
-    if(verbose.value()) cerr << "Reading mask...." << endl;
+    if (verbose.value()) cerr << "Reading mask...." << endl;
     read_volume(mask, maskname.value());
-    if(verbose.value()) print_volume_info(mask,"mask");
+    if (verbose.value()) print_volume_info(mask,"mask");
 
     // Read the zstat image to boost (single volume)
-    if(verbose.value()) cerr << "Reading image...." << endl;
+    if (verbose.value()) cerr << "Reading image...." << endl;
     read_volume(img, zstatname.value());
-    if(verbose.value()) print_volume_info(img,"Zstat");
+    if (verbose.value()) print_volume_info(img,"Zstat");
 
     // Read the residual images for smoothness estimation (array of volumes)
-    if(residname.set())
+    if (residname.set())
     {
-        if(verbose.value()) cerr << "Reading residuals...." << endl;
+        if (verbose.value()) cerr << "Reading residuals...." << endl;
         read_volume4D(R, residname.value());
-        if(verbose.value()) print_volume_info(R,"residuals");
-        if(dof.unset())
+        if (verbose.value()) print_volume_info(R,"residuals");
+        if (dof.unset())
         {
-            if(verbose.value()) cerr << "Dof unspecified. Using residual length as degrees of freedom: " << R.tsize() << endl;
+            if (verbose.value()) cerr << "Dof unspecified. Using residual length as degrees of freedom: " << R.tsize() << endl;
             _dof = R.tsize();
         }
     }
     else
     {
-        if(verbose.value()) cerr << "Residuals not found. Using Zstat for smoothness estimation...." << endl;;
+        if (verbose.value()) cerr << "Residuals not found. Using Zstat for smoothness estimation...." << endl;;
         read_volume4D(R, zstatname.value());
-        if(verbose.value()) print_volume_info(R,"Zstat");
+        if (verbose.value()) print_volume_info(R,"Zstat");
     }
 
     if ( !samesize(R[0], mask) || !samesize(img, mask) )
@@ -171,15 +170,20 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Settings
+
+    // 3. Settings
     if (verbose.value()) cout << "Settings" << endl;
     if (verbose.value()) cout << "********************************" << endl;
 
-    // Perform pTFCE
+
+    // 3.a) Define pTFCE
     pTFCE<float> enhance(img, mask, R, _dof);
 
+    enhance.setThresholdCount(nthr.value());
     if (verbose.value()) enhance.verbose();
 
+
+    // 3.b) Smoothness set-up or estimation
     if (gRd.set() && gVoxels.set() && gResels.set())
         enhance.setSmoothness( gRd.value(), gVoxels.value(), gResels.value() );
     // TODO - cover cases when global smoothness is set, but local calculations are needed
@@ -195,12 +199,13 @@ int main(int argc, char* argv[])
     t2 = std::chrono::high_resolution_clock::now();
     tSmoothest = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     if (verbose.value()) enhance.printSmoothness();
+    if (verbose.value()) cout << "Running time (smoothness): " << tSmoothest.count() << endl;
 
-    enhance.setThresholdCount(nthr.value()); //deafult in R package
 
-
-    if(true || verbose.value())
+    // 3.c) Check settings
+    if (true || verbose.value())
     {
+	cout << "verbose = " << verbose.value() << endl;
 	cout << "verbose = " << verbose.value() << endl;
 	cout << "help = " << help.value() << endl;
 	cout << "dof = " << dof.value() << endl;
@@ -215,18 +220,21 @@ int main(int argc, char* argv[])
     }
 
 
+    // 4. Calculate pTFCE
     t1 = std::chrono::high_resolution_clock::now();
     enhance.calculate();
-    cout << "diag: " << "pTFCE value return: " << enhance.pTFCEimg.value(40, 40, 40) << endl;
-    cout << "diag: " << "Z_pTFCE value return: " << enhance.Z_pTFCE.value(40, 40, 40) << endl;
     t2 = std::chrono::high_resolution_clock::now();
     tPTFCE = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    cout << "diag: " << "time: " << tPTFCE.count() << endl;
+    if (verbose.value()) cout << "Running time (pTFCE): " << tPTFCE.count() << endl;
 
-    // Save enhanced volume TODO - find_last_of /\\ nem mukodik, ha nincs perjel az eleresi utban
-    size_t zstatPathSep = zstatname.value().find_last_of("/\\");
-    string zstatPath = zstatname.value().substr(0,zstatPathSep);
-    string zstatFile = zstatname.value().substr(zstatPathSep);
+
+    // 5. Save results
+    std::string thisDir ("./");
+    std::string zstatName (zstatname.value());
+    if ( zstatName.find_last_of("/\\") == std::string::npos ) zstatName = thisDir + zstatName;
+    size_t zstatPathSep = zstatName.find_last_of("/\\");
+    string zstatPath = zstatName.substr(0,zstatPathSep);
+    string zstatFile = zstatName.substr(zstatPathSep);
     size_t zstatExtSep = zstatFile.find_last_of(".");
     string zstatFileBase = zstatFile.substr(0,zstatExtSep);
     if ( zstatPath == zstatFile ) zstatPath = ".";
@@ -269,9 +277,6 @@ int main(int argc, char* argv[])
 	} break;
     }
 
-    cout << "diag: " << "pTFCE value write: " << enhance.pTFCEimg.value(40, 40, 40) << endl;
-    cout << "diag: " << "Z_pTFCE value write: " << enhance.Z_pTFCE.value(40, 40, 40) << endl;
-
     save_volume(enhance.pTFCEimg, fn_p);
     save_volume(enhance.logp_pTFCE, fn_lp);
     save_volume(enhance.Z_pTFCE, fn_z);
@@ -279,6 +284,11 @@ int main(int argc, char* argv[])
     {
 	enhance.saveRPV(fn_rpv);
 	enhance.saveFWHM(fn_fwhm);
+    }
+    if ( verbose.value() )
+    {
+	string fn_label = outdir + "/" + zstatFileBase + "_LABEL_4D.nii.gz";
+	enhance.saveLABEL(fn_label);
     }
 
     if ( operationtime.set() )

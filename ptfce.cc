@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
+#include <cstdlib>
 #include "ptfce.h"
 #include "newimage/newimageall.h" //volume, connected_components
 #include "smoothest_ext.h" //smoothest
@@ -100,24 +101,21 @@ void pTFCE<T>::estimateSmoothness()
 
 
 template <class T>
-T pTFCE<T>::aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals)
+double pTFCE<T>::aggregateLogp(NEWMAT::ColumnVector &pvals, bool printpvals)
 {
+    double nlogmin = -1.0 * log(std::numeric_limits<double>::min());
+    double aggr=0.0;
+    double tmp=0.0;
 
-    double nlogmin = -1 * log(std::numeric_limits<double>::min());
-    T aggr=0;
     for (int i = 1; i <= pvals.n_rows; ++i)
     {
-		if (printpvals) cout << "diag: " << "aggr: " << i << " pval: " << pvals(i) << endl;
-	    pvals(i) = -1 * log(pvals(i));
-	    if (isinf(pvals(i)) || isnan(pvals(i))) pvals(i) = nlogmin;
-		if (printpvals) cout << "diag: " << "aggr: " << i << " nlog pval: " << pvals(i) << endl;
-	    aggr+=pvals(i);
+	tmp = -1.0 * log(pvals(i));
+	if (isinf(tmp) || isnan(tmp)) tmp = nlogmin;
+	aggr+=tmp;
     }
-    //aggr = armawrap::Sum(pvals);
-	if (printpvals) cout << "diag: " << "aggr:" << " aggregated nlogp: " << aggr << endl;
+    if (printpvals) cout << "diag: " << "aggr:" << " aggregated nlogp: " << aggr << endl;
     aggr = 0.5 * (sqrt(dh * (8.0 * aggr + dh)) - dh);
-    // return the logp
-    //aggr = exp(-1 * aggr);
+
     return aggr;
 }
 
@@ -128,38 +126,25 @@ int pTFCE<T>::calculate()
     // TODO check for NA/nan values
     // TODO check for (-)inf values
 
-    volume4D<T> PVC;        PVC.copyproperties(img);
+    volume4D<double> PVC;        //PVC.copyproperties(img);
+    copybasicproperties(img, PVC);
     copyconvert(img, pTFCEimg);
     copyconvert(img, logp_pTFCE);
     copyconvert(img, Z_pTFCE);
     volume<T> thr;          copyconvert(img, thr);
     volume<int> ccc;        copyconvert(img, ccc);
     volume4D<int> CLUST;    CLUST.copyproperties(ccc);
-    volume4D<int> LABEL;    LABEL.copyproperties(ccc);
+    /*volume4D<int> LABEL; //defined as member of pTFCE class*/
+    LABEL.copyproperties(ccc);
     volumeClust<int> sizes;
-    volumeClust<T> pvoxclust;
+    volumeClust<double> pvoxclust;
 
     img = mask_volume(img, mask);
 
     if (Rd == 0.0)
     {
-		this->estimateSmoothness();
+	this->estimateSmoothness();
     }
-
-	cout << "diag: " << "image value: " << img.value(40, 40, 40) << endl;
-	cout << "diag: " << "mask value: " << mask.value(40, 40, 40) << endl;
-	cout << "diag: " << "Nh: " << Nh << endl;
-	cout << "diag: " << "dh: " << dh << endl;
-	cout << "diag: " << "dof: " << dof << endl;
-	cout << "diag: " << "Rd: " << Rd << endl;
-	cout << "diag: " << "Voxels: " << V << endl;
-	cout << "diag: " << "Resels: " << resels << endl;
-	cout << "diag: " << "dLh: " << dLh << endl;
-	if (RPVMode != 0) cout << "diag: " << "RPV value: " << RPV.value(40, 40, 40) << endl;
-	cout << "diag: " << "autosmooth: " << autosmooth << endl;
-	cout << "diag: " << "RPVmode: " << RPVMode << endl;
-	cout << "diag: " << "local smth adjustment: " << adjustClusterSize << endl;
-	cout << "diag: " << "ZestThr: " << ZestThr << endl;
 
     if (_verbose) std::cout << "2. Calculate pTFCE" << std::endl;
     if (_verbose) std::cout << "********************************" << std::endl;
@@ -169,71 +154,69 @@ int pTFCE<T>::calculate()
 
     for (unsigned int i = 0; i < Nh; ++i)
     {
-		double p_thres = exp( -1 * ( logpmin + i * dh ) );
-		double thres = qnormR(p_thres, 0.0, 1.0, false, false);
-		NEWMAT::ColumnVector clustersizes;
-		NEWMAT::ColumnVector clusterpvox;
-		NEWMAT::ColumnVector clusterresels;
+	double p_thres = exp( -1 * ( logpmin + i * dh ) );
+	double thres = qnormR(p_thres, 0.0, 1.0, false, false);
+	NEWMAT::ColumnVector clustersizes;
+	NEWMAT::ColumnVector clusterpvox;
+	NEWMAT::ColumnVector clusterresels;
 
-		if (_verbose && (i%10) == 0) std::cout << i+1 << " " << std::endl;
-		if (logpmin == 0.0 && i == 0)
-			thres = std::numeric_limits<T>::lowest();
+	if (_verbose && (i%10) == 0) std::cout << i+1 << " " << std::endl;
+	if (logpmin == 0.0 && i == 0)
+	    thres = std::numeric_limits<double>::lowest();
+	    //thres = -9999999999;
 
-		copyconvert(img, thr);
-		thr.binarise(thres);
-		ccc = connected_components(thr, clustersizes, 6);  //6, 18 or 26
+	copyconvert(img, thr);
+	thr.binarise(thres);
+	ccc = connected_components(thr, clustersizes, 6);  //6, 18 or 26
 
-			if (adjustClusterSize)
-			{
-				volumeClust<T> RPC; copyconvert(ccc, RPC);
-				RPC.sumClusterRPVValues(RPV, clusterresels);
-			}
+	if (adjustClusterSize)
+	{
+	    volumeClust<T> RPC; copyconvert(ccc, RPC);
+	    RPC.sumClusterRPVValues(RPV, clusterresels);
+	}
 
-		if (_verbose)
-		{
-			copyconvert(ccc, sizes);
-			sizes.projectClusterValues(clustersizes, 0.0f);
-			CLUST.addvolume(sizes);
-			LABEL.addvolume(ccc);
-		}
+	copyconvert(ccc, sizes); //
+	sizes.projectClusterValues(clustersizes, 0.0f); //
+	CLUST.addvolume(sizes); //
+	if (_verbose)
+	{
+	    copyconvert(ccc, sizes);
+	    sizes.projectClusterValues(clustersizes, 0.0f);
+	    CLUST.addvolume(sizes);
+	    LABEL.addvolume(ccc);
+	}
 
-		clusterpvox.ReSize(clustersizes.n_rows);
-		for (int i = 1; i <= clusterpvox.n_rows; ++i)
-		{
-			double pvc;
-			if (!adjustClusterSize)
-			{
-			struct dcl_params params = {V, Rd, (double)clustersizes(i), ZestThr};
-			pvc = pvox_clust(thres, &params);
-			}
-			else
-			{
-			//clustersize given is resel must be converted to voxel units, hence the multiplications with "resels" (resel size)
-			//mean of the RPV image * "resels" does not exactle equal 1 (it's ~ 0.993) TODO - check border voxels
-	if (_verbose) cout << "*RESELS************************** " << resels << " threshold " << thres << " clustersizez(i) " << clustersizes(i) << " clusterresels(i) " << clusterresels(i) << " clusterresels(i) * resels " << clusterresels(i) * resels << endl;
-			struct dcl_params params = {V, Rd, clusterresels(i) * resels, ZestThr};
-			pvc = pvox_clust(thres, &params);
-			}
+	clusterpvox.ReSize(clustersizes.n_rows);
+	for (int k = 1; k <= clusterpvox.n_rows; ++k)
+	{
+	    double pvc;
+	    if (!adjustClusterSize)
+	    {
+		struct dcl_params params = {V, Rd, (double)clustersizes(k), ZestThr};
+		pvc = pvox_clust(thres, &params);
+	    }
+	    else
+	    {
+		//clustersize given is resel must be converted to voxel units, hence the multiplications with "resels" (resel size)
+		//mean of the RPV image * "resels" does not exactle equal 1 (it's ~ 0.993) TODO - check border voxels
+		if (false && _verbose) cout << "*RESELS************************** " << resels << " threshold " << thres << " clustersizez(i) " << clustersizes(k) << " clusterresels(i) " << clusterresels(k) << " clusterresels(i) * resels " << clusterresels(k) * resels << endl;
+		struct dcl_params params = {V, Rd, (double)clusterresels(k) * resels, ZestThr};
+		pvc = pvox_clust(thres, &params);
+	    }
 
-			clusterpvox(i) = pvc; //applying GRF approach
-			if (false && _verbose) std::cout << p_thres << " " << thres << " " << clustersizes(i) << " " << clusterpvox(i) << std::endl;
-		}
-		copyconvert(ccc, pvoxclust);
-		pvoxclust.projectClusterValues(clusterpvox, 1.0f);
+	    clusterpvox(k) = pvc; //applying GRF approach
+	    if (false && _verbose) std::cout << p_thres << " " << thres << " " << clustersizes(k) << " " << clusterpvox(k) << std::endl;
+	}
+	copyconvert(ccc, pvoxclust);
+	pvoxclust.projectClusterValues(clusterpvox, 1.0f);
 
-		PVC.addvolume(pvoxclust);
-
-
-		cout << "diag: " << "Nh: " << i+1 << ", PVC value: " << PVC.value(40, 40, 40) << endl;
+	PVC.addvolume(pvoxclust);
     }
 
     if (_verbose) std::cout << "...done" << std::endl;
 
-    if (_verbose)
+    if (false && _verbose)
     {
-	save_volume(PVC, "testdata/PVC.nii.gz");
-	save_volume(CLUST, "testdata/CLUST.nii.gz");
-	save_volume(LABEL, "testdata/LABEL.nii.gz");
 	/*
 	std::cout << "PVC x\t" << PVC.ColumnsX << " " << PVC.Xdim << std::endl;
 	std::cout << "PVC y\t" << PVC.RowsY << " " << PVC.Ydim << std::endl;
@@ -245,47 +228,25 @@ int pTFCE<T>::calculate()
     }
 
     for (int64_t x = 0; x < pTFCEimg.xsize(); ++x)
-		for (int64_t y = 0; y < pTFCEimg.ysize(); ++y)
-			for (int64_t z = 0; z < pTFCEimg.zsize(); ++z)
-			{
-			//if (mask.value(x,y,z) > 0.0)
-			//{
-				//aggregate logp values
-				NEWMAT::ColumnVector allpvox;
-				double aggr;
-				allpvox = PVC.voxelts(x, y, z);
-				if (x == 40 && y == 40 && z == 40)
-				{
-					aggr = aggregateLogp(allpvox, false);
-				}
-				else
-				{
-					aggr = aggregateLogp(allpvox);
-				}
-				logp_pTFCE.value(x,y,z) = aggr;
-				//}
-				//else
-				//{
-				//    pTFCEimg.value(x,y,z) = std::numeric_limits<T>::min();
-				//}
-				double p = exp(-aggr);
-				pTFCEimg.value(x,y,z)  = p;
-				if (pTFCEimg.value(x,y,z) == 0) pTFCEimg.value(x,y,z)=std::numeric_limits<T>::min();
-				if (p == 1.0) p = 1.0-std::numeric_limits<T>::min();
-				Z_pTFCE.value(x,y,z)  = qnormR(p, 0.0, 1.0, false, false);
+	for (int64_t y = 0; y < pTFCEimg.ysize(); ++y)
+	    for (int64_t z = 0; z < pTFCEimg.zsize(); ++z)
+	    {
+		if (mask.value(x,y,z) == 0.0) continue;
+		
+		//aggregate logp values
+		NEWMAT::ColumnVector allpvox;
+		double aggr;
+		allpvox = PVC.voxelts(x, y, z);
 
-				if (x == 40 && y == 40 && z == 40)
-				{
-					//cout << "diag: " << "PVC ts values: " << allpvox << endl;
-					//cout << "diag: " << "aggregated log p: " << aggr << endl;
-					//cout << "diag: " << "aggregated p: " << p << endl;
-					//cout << "diag: " << "pTFCE value: " << pTFCEimg.value(40, 40, 40) << endl;
-					//cout << "diag: " << "Z_pTFCE value: " << Z_pTFCE.value(40, 40, 40) << endl;
-				}
-			}
+		aggr = aggregateLogp(allpvox);
+		double p = exp(-aggr);
+		if (p == 0.0) p = std::numeric_limits<double>::min();
+		if (p == 1.0) p = 1.0 - std::numeric_limits<double>::epsilon();
 
-	//cout << "diag: " << "pTFCE value pro: " << pTFCEimg.value(40, 40, 40) << endl;
-	//cout << "diag: " << "Z_pTFCE value pro: " << Z_pTFCE.value(40, 40, 40) << endl;
+		pTFCEimg.value(x,y,z)  = p;
+		logp_pTFCE.value(x,y,z) = aggr;
+		Z_pTFCE.value(x,y,z)  = qnormR(p, 0.0, 1.0, false, false);
+	    }
 
     if (autosmooth || resels > 0)
     {
@@ -304,8 +265,6 @@ int pTFCE<T>::calculate()
 
     if (_verbose) std::cout << "number_of_resels: " << number_of_resels << std::endl;
     if (_verbose) std::cout << "fwer_0.05_Z: " << fwer005_Z << std::endl;
-    std::cout << "diag " << "number_of_resels: " << number_of_resels << std::endl;
-    std::cout << "diag " << "fwer_0.05_Z: " << fwer005_Z << std::endl;
 
     return 0;
 }
@@ -382,9 +341,16 @@ void pTFCE<T>::saveRPV(const string& filename)
 template <class T>
 void pTFCE<T>::saveFWHM(const string& filename)
 {
-    //TODO - check if RPV image is valid
+    //TODO - check if FWHM image is valid
     //save_volume( mask_volume(smooth(this->FWHMimg, this->img.xdim()), this->mask), filename );
     save_volume( this->FWHMimg, filename );
+}
+
+template <class T>
+void pTFCE<T>::saveLABEL(const string& filename)
+{
+    //TODO - check if LABEL image is valid
+    save_volume( this->LABEL, filename );
 }
 
 template <class T>

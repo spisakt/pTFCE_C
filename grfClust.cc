@@ -11,8 +11,8 @@
 #endif
 
 #define GSL_INTEGRATION_INTERVAL_LIMIT 8
-//#define GSL_INTEGRATION_UPPER std::numeric_limits<double>::infinity()
-#define GSL_INTEGRATION_UPPER 6.0
+#define GSL_INTEGRATION_UPPER std::numeric_limits<double>::infinity()
+//#define GSL_INTEGRATION_UPPER 6.0
 #define GSL_EPS_ABS 0.1
 #define GSL_EPS_REL 0.1
 
@@ -120,4 +120,3 @@ if (isnan2(result) || result == 0.0) { std::cout << "nan:pvox_clust " << result 
 
     return result;
 }
-

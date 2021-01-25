@@ -110,7 +110,7 @@ inline double pnorm(T x, double mean = 0.0, double sd = 1.0, bool _lowtail = tru
 {
     long double distrib = (1 + erfl( (long double)(x - mean) / (sd * sqrt(2.0)) )) / 2.0;
     if (!_lowtail)
-	distrib = 1.0 - distrib;
+        distrib = 1.0 - distrib;
     if (_logp)
     {
         std::cout << log(1- (1 + erfl( (long double)(4 - mean) / (sd * sqrt(2.0)) )) / 2.0 ) << "\n";
@@ -136,12 +136,12 @@ inline double qnorm(T p, double mean = 0.0, double sd = 1.0, bool _lowtail = tru
 {
     double quantile;
     if (_logp)
-	p = exp(p);
+        p = exp(p);
     quantile = sd * sqrt(2.0) * erfinv2(2.0*p - 1);
     if (_lowtail)
-	quantile = mean + quantile;
+        quantile = mean + quantile;
     else
-	quantile = mean - quantile;
+        quantile = mean - quantile;
     return quantile;
 }
 
