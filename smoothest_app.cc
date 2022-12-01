@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <string>
 #include <map>
@@ -13,7 +14,7 @@
 using namespace Utilities;
 using namespace NEWIMAGE;
 
-Option<bool> verbose(string("-V,--verbose"), false,
+Option<bool> verbose(string("-v,--verbose"), false,
 	     string("switch on diagnostic messages"),
 	     false, no_argument);
 Option<bool> help(string("-h,--help"), false,
@@ -22,7 +23,7 @@ Option<bool> help(string("-h,--help"), false,
 Option<float> dof(string("-d,--dof"), 100.0,
 	  string("number of degrees of freedom"),
 	  true, requires_argument);
-Option<int> local(string("-l,--rpv"), 0,
+Option<int> local(string("-s,--smmode"), 0,
 	  string("local smoothness estimation (0* - none; 1 - FSLRPV; 2 - SPMRPV)"),
 	  true, requires_argument);
 Option<string> maskname(string("-m,--mask"), "mask",
@@ -118,7 +119,7 @@ int main(int argc, char **argv) {
   }
   if(verbose.value()) cerr << "done" << endl;
 
-
+  // Read residuals the smoothness estimated from
   volume4D<float> R;
   read_volume4D(R,datafilename);
   if (verbose.value()) print_volume_info(R,"Data (residuals/zstat)");
@@ -129,7 +130,16 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
+  // Set output filename
+  std::string thisDir ("./");
+  if ( datafilename.find_last_of("/\\") == std::string::npos ) datafilename = thisDir + datafilename;
+  size_t dataPathSep = datafilename.find_last_of("/\\");
+  string dataPath = datafilename.substr(0,dataPathSep);
+  string dataFile = datafilename.substr(dataPathSep);
+  size_t dataExtSep = dataFile.find_last_of(".nii");
+  string dataFileBase = dataFile.substr(0,dataExtSep-4);
 
+  // Estimate smoothness
   if (local.value() == 0)
   {
     status = smoothest(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq,
@@ -143,16 +153,29 @@ int main(int argc, char **argv) {
     smoothestVox(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq, RPV, FWHMimg,
                   R, mask,
                   dof.value(), verbose.value());
-    save_volume(RPV, "smoothest_app_fslrpv.nii.gz");
+    save_volume(RPV, dataPath + "/" + dataFileBase + "_fslrpv.nii.gz");
 
   }
+
   if (local.value() == 2)
   {
+    status = smoothest(dlh, mask_volume, resels, FWHM_vox, FWHM_mm, sigmasq,
+	     R,
+	     mask,
+	     dof.value(), verbose.value());
     estimateRPV(RPV, FWHMimg,
                   R, mask,
                   dof.value(), verbose.value());
-    save_volume(RPV, "smoothest_app_spmrpv.nii.gz");
+    save_volume(RPV, dataPath + "/" + dataFileBase + "_spmrpv.nii.gz");
   }
+
+  // Save global estimates
+  double Rd = dlh * mask_volume;
+  string estFileName = dataPath + "/" + dataFileBase + "_smoothest.txt";
+  ofstream estFile;
+  estFile.open( estFileName, ios::out | ios::trunc );
+  estFile << Rd << "\n" << mask_volume << "\n" << resels << "\n";
+  estFile.close();
 
 
   return status;

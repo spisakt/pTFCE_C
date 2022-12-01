@@ -6,6 +6,6 @@ pTFCE-test
 ptfce
 pTFCE
 smoothest
-build/
+build*
 .vscode/
 archive/
