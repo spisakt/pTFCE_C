@@ -27,7 +27,9 @@ class pTFCE
     double dLh;			//
     volume<T> RPV;              //Resels per Voxel image
     volume<T> FWHMimg;          //FWHM image
-    volume4D<int> LABEL;        //Cluster label 4D image for each threshold
+    volume4D<double> PVC;       //PVC.copyproperties(img);
+
+    ////volume4D<int> LABEL;        //Cluster label 4D image for each threshold
     bool adjustClusterSize;     //RFT cluster-size adjustment based on RPV
     unsigned int autosmooth;	//Smoothness estimation mode (0-manual; 1-Z image; 2-residual image) TODO proper mode selection
     int RPVMode;		//Local smoothness implementation mode (1-FSL*; 2-SPM)
@@ -51,6 +53,7 @@ class pTFCE
 	RPVMode = 1;
 	adjustClusterSize = false;
 	_verbose = false;
+	copybasicproperties(img, PVC);
     }
 
     pTFCE(volume<T> img, volume<T> mask, volume4D<T> residual, double dof): img(img), mask(mask), residual(residual), dof(dof)
@@ -66,6 +69,7 @@ class pTFCE
 	RPVMode = 1;
 	adjustClusterSize = false;
 	_verbose = false;
+	copybasicproperties(img, PVC);
     }
 
     ~pTFCE();
@@ -89,7 +93,7 @@ class pTFCE
     void loadRPV(const string& filename);
     void saveRPV(const string& filename);
     void saveFWHM(const string& filename);
-    void saveLABEL(const string& filename);
+    ////void saveLABEL(const string& filename);
     void setRFTAdjust(bool a);
     int  getRFTAdjust();
     void setZestThr(double Z);

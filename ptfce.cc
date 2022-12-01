@@ -126,17 +126,17 @@ int pTFCE<T>::calculate()
     // TODO check for NA/nan values
     // TODO check for (-)inf values
 
-    volume4D<double> PVC;        //PVC.copyproperties(img);
-    copybasicproperties(img, PVC);
+    /*volume4D<double> PVC;        //PVC.copyproperties(img);
+    copybasicproperties(img, PVC); // now done during pTFCE class instantiation*/
     copyconvert(img, pTFCEimg);
     copyconvert(img, logp_pTFCE);
     copyconvert(img, Z_pTFCE);
     volume<T> thr;          copyconvert(img, thr);
     volume<int> ccc;        copyconvert(img, ccc);
-    volume4D<int> CLUST;    CLUST.copyproperties(ccc);
-    /*volume4D<int> LABEL; //defined as member of pTFCE class*/
-    LABEL.copyproperties(ccc);
-    volumeClust<int> sizes;
+    ////volume4D<int> CLUST;    CLUST.copyproperties(ccc);
+    /////*volume4D<int> LABEL; //defined as member of pTFCE class*/
+    ////LABEL.copyproperties(ccc);
+    ////volumeClust<int> sizes;
     volumeClust<double> pvoxclust;
 
     img = mask_volume(img, mask);
@@ -175,16 +175,16 @@ int pTFCE<T>::calculate()
 	    RPC.sumClusterRPVValues(RPV, clusterresels);
 	}
 
-	copyconvert(ccc, sizes); //
-	sizes.projectClusterValues(clustersizes, 0.0f); //
-	CLUST.addvolume(sizes); //
-	if (_verbose)
-	{
-	    copyconvert(ccc, sizes);
-	    sizes.projectClusterValues(clustersizes, 0.0f);
-	    CLUST.addvolume(sizes);
-	    LABEL.addvolume(ccc);
-	}
+	////copyconvert(ccc, sizes); //
+	////sizes.projectClusterValues(clustersizes, 0.0f); //
+	////CLUST.addvolume(sizes); //
+	////if (_verbose)
+	////{
+	////    copyconvert(ccc, sizes);
+	////    sizes.projectClusterValues(clustersizes, 0.0f);
+	////    CLUST.addvolume(sizes);
+	////    LABEL.addvolume(ccc);
+	////}
 
 	clusterpvox.ReSize(clustersizes.n_rows);
 	for (int k = 1; k <= clusterpvox.n_rows; ++k)
@@ -346,12 +346,12 @@ void pTFCE<T>::saveFWHM(const string& filename)
     save_volume( this->FWHMimg, filename );
 }
 
-template <class T>
-void pTFCE<T>::saveLABEL(const string& filename)
-{
-    //TODO - check if LABEL image is valid
-    save_volume( this->LABEL, filename );
-}
+////template <class T>
+////void pTFCE<T>::saveLABEL(const string& filename)
+////{
+////    //TODO - check if LABEL image is valid
+////    save_volume( this->LABEL, filename );
+////}
 
 template <class T>
 void pTFCE<T>::setRFTAdjust(bool a)

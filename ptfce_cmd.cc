@@ -285,11 +285,11 @@ int main(int argc, char* argv[])
 	enhance.saveRPV(fn_rpv);
 	enhance.saveFWHM(fn_fwhm);
     }
-    if ( verbose.value() )
-    {
-	string fn_label = outdir + "/" + zstatFileBase + "_LABEL_4D.nii.gz";
-	enhance.saveLABEL(fn_label);
-    }
+    ////if ( verbose.value() )
+    ////{
+    ////    string fn_label = outdir + "/" + zstatFileBase + "_LABEL_4D.nii.gz";
+    ////    enhance.saveLABEL(fn_label);
+    ////}
 
     if ( operationtime.set() )
     {
