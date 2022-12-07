@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
-#include "libprob/libprob.h"
+#include "libprob/libprob.h" //FSL <6.0.5
+//#include "cprob/libprob.h" //FSL >=6.0.5
 #include "pvalutil.h"
 
 #define MINP 1e-15
