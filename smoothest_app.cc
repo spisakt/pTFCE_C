@@ -154,6 +154,7 @@ int main(int argc, char **argv) {
                   R, mask,
                   dof.value(), verbose.value());
     save_volume(RPV, dataPath + "/" + dataFileBase + "_fslrpv.nii.gz");
+    save_volume(FWHMimg, dataPath + "/" + dataFileBase + "_fslfwhm.nii.gz");
 
   }
 
@@ -167,6 +168,7 @@ int main(int argc, char **argv) {
                   R, mask,
                   dof.value(), verbose.value());
     save_volume(RPV, dataPath + "/" + dataFileBase + "_spmrpv.nii.gz");
+    save_volume(FWHMimg, dataPath + "/" + dataFileBase + "_spmfwhm.nii.gz");
   }
 
   // Save global estimates

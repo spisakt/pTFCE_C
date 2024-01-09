@@ -235,8 +235,8 @@ int main(int argc, char* argv[])
     size_t zstatPathSep = zstatName.find_last_of("/\\");
     string zstatPath = zstatName.substr(0,zstatPathSep);
     string zstatFile = zstatName.substr(zstatPathSep);
-    size_t zstatExtSep = zstatFile.find_last_of(".");
-    string zstatFileBase = zstatFile.substr(0,zstatExtSep);
+    size_t zstatExtSep = zstatFile.find_last_of(".nii");
+    string zstatFileBase = zstatFile.substr(0,zstatExtSep-4);
     if ( zstatPath == zstatFile ) zstatPath = ".";
     string outdir = zstatPath + "/" + "pTFCE";
     makeDirectoryPortable(outdir);
